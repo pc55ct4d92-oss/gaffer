@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>U10 Sub Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --lime:#a8d060;--white:#f0f4f0;--off:#c8d4c8;--muted:#7a917a;--dark:#0d1a0d;
+  --card:#162416;--card2:#1a2e1a;--card3:#0f1f0f;
+  --border:rgba(168,208,96,0.15);--border2:rgba(168,208,96,0.25);
+  --danger:#e05555;--warn:#d4a030;--info:#4a9fd4;
+  --offcolor:#4a8cbf;--defcolor:#d4753a;
+  --radius:8px;--radius-lg:12px;
+  --mono:'DM Mono',monospace;--head:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--dark);color:var(--white);font-family:var(--body);overscroll-behavior:none;}
+body{display:flex;flex-direction:column;}
+.top-nav{display:flex;background:var(--card);border-bottom:1px solid var(--border2);overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+.top-nav::-webkit-scrollbar{display:none;}
+.nav-btn{flex-shrink:0;padding:12px 16px;font-family:var(--head);font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;}
+.nav-btn.active{color:var(--lime);border-bottom-color:var(--lime);}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.tab{display:none;padding:16px;}
+.tab.active{display:block;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:12px;}
+.card-title{font-family:var(--head);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--lime);margin-bottom:10px;}
+.btn{font-family:var(--head);font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;padding:9px 18px;border-radius:var(--radius);border:none;cursor:pointer;}
+.btn-primary{background:var(--lime);color:var(--dark);}
+.btn-secondary{background:transparent;color:var(--lime);border:1px solid var(--border2);}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid rgba(224,85,85,0.3);}
+.btn-warn{background:transparent;color:var(--warn);border:1px solid rgba(212,160,48,0.3);}
+.btn-sm{font-size:11px;padding:5px 12px;}
+.btn-full{width:100%;}
+.chip{font-family:var(--head);font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--border2);color:var(--off);background:var(--card2);cursor:pointer;user-select:none;}
+.chip.on{background:var(--lime);color:var(--dark);border-color:var(--lime);}
+.chip.gkchip{border-color:var(--info);}
+.chip.gkchip.on{background:var(--info);color:var(--white);border-color:var(--info);}
+.pgrid{display:flex;flex-wrap:wrap;gap:7px;}
+.lbl{font-family:var(--head);font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+select,input[type=number],input[type=date]{font-family:var(--body);font-size:14px;background:var(--card2);color:var(--white);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 10px;width:100%;}
+select option{background:var(--dark);}
+.rrow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.rrow:last-child{border-bottom:none;}
+.rname{font-family:var(--head);font-size:16px;font-weight:600;}
+.badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid;white-space:nowrap;}
+.bgk{color:var(--info);border-color:rgba(74,159,212,0.4);background:rgba(74,159,212,0.1);}
+.half-setup{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.half-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;}
+.half-lbl{font-family:var(--head);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lime);margin-bottom:8px;}
+.bgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;}
+.bcell{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 6px;}
+.bclbl{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:5px;}
+.bp{font-family:var(--head);font-size:12px;font-weight:600;padding:3px 6px;border-radius:4px;margin-bottom:3px;}
+.bpon{background:rgba(168,208,96,0.15);color:var(--lime);}
+.bpoff{background:rgba(224,85,85,0.1);color:var(--danger);cursor:pointer;}
+.bpoff:active{background:rgba(224,85,85,0.3);}
+.bpgk{background:rgba(74,159,212,0.15);color:var(--info);}
+.lockico{font-size:9px;margin-left:3px;opacity:0.7;}
+.timer-display{text-align:center;padding:16px 0 8px;}
+.tmmain{font-family:var(--mono);font-size:72px;font-weight:500;color:var(--lime);line-height:1;letter-spacing:-3px;}
+.tmsub{font-family:var(--mono);font-size:15px;color:var(--muted);margin-top:8px;}
+.tmctrl{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.tmctrl .btn{padding:12px 20px;font-size:14px;}
+.tmctrl .btn-sm{padding:10px 16px;font-size:13px;}
+.halfsw{display:flex;gap:8px;margin-bottom:12px;}
+.halfbtn{flex:1;padding:8px;font-family:var(--head);font-size:13px;font-weight:600;text-transform:uppercase;background:var(--card2);color:var(--muted);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;}
+.halfbtn.active{background:#1a3d1a;color:var(--lime);border-color:var(--lime);}
+
+/* field sections */
+.field-section{margin-bottom:10px;}
+.field-section:last-child{margin-bottom:0;}
+.field-section-label{font-family:var(--head);font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;padding:2px 0;}
+.field-section-label.loff{color:var(--offcolor);}
+.field-section-label.ldef{color:var(--defcolor);}
+.field-section-label.lgk{color:var(--info);}
+.frow{display:flex;gap:8px;flex-wrap:wrap;}
+.fslot{background:var(--card2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex:1;min-width:0;min-height:52px;}
+.fslot.fgk{border-color:rgba(74,159,212,0.4);background:rgba(74,159,212,0.06);}
+.fslot.foff{border-color:rgba(74,140,191,0.35);}
+.fslot.fdef{border-color:rgba(212,117,58,0.35);}
+.fpn{font-family:var(--head);font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fpp{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.odbadge{font-family:var(--head);font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px;border:1px solid;cursor:pointer;letter-spacing:0.05em;white-space:nowrap;flex-shrink:0;min-width:44px;text-align:center;-webkit-tap-highlight-color:rgba(255,255,255,0.1);}
+.odoff{color:var(--offcolor);border-color:rgba(74,140,191,0.5);background:rgba(74,140,191,0.12);}
+.oddef{color:var(--defcolor);border-color:rgba(212,117,58,0.5);background:rgba(212,117,58,0.12);}
+.odnone{color:var(--muted);border-color:var(--border2);}
+.schips{display:flex;flex-wrap:wrap;gap:6px;}
+.chon{font-family:var(--head);font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;background:rgba(212,160,48,0.15);color:var(--warn);border:1px solid rgba(212,160,48,0.3);}
+.choff{font-family:var(--head);font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;background:rgba(224,85,85,0.1);color:var(--danger);border:1px solid rgba(224,85,85,0.3);}
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:10px;line-height:1.5;}
+.awarn{background:rgba(212,160,48,0.1);border:1px solid rgba(212,160,48,0.3);color:var(--warn);}
+.ainfo{background:rgba(74,159,212,0.1);border:1px solid rgba(74,159,212,0.3);color:var(--info);}
+.aok{background:rgba(168,208,96,0.1);border:1px solid rgba(168,208,96,0.3);color:var(--lime);}
+.adanger{background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.3);color:var(--danger);}
+.rephead{font-family:var(--head);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--border2);display:grid;grid-template-columns:1fr 42px 42px 42px 48px;gap:4px;}
+.reprow{display:grid;grid-template-columns:1fr 42px 42px 42px 48px;gap:4px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.reprow:last-child{border-bottom:none;}
+.repn{font-family:var(--head);font-size:14px;font-weight:600;}
+.repnum{font-family:var(--mono);font-size:12px;text-align:right;}
+.dbar{height:4px;border-radius:3px;background:var(--card2);margin-top:3px;overflow:hidden;}
+.dfill{height:100%;border-radius:3px;}
+.dpos{background:var(--danger);}
+.dneg{background:var(--lime);}
+.ghrow{border-bottom:1px solid var(--border);}
+.ghrow:last-child{border-bottom:none;}
+.ghhdr{display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer;user-select:none;}
+.ghtitle{font-family:var(--head);font-size:14px;font-weight:600;}
+.chev{font-size:10px;color:var(--muted);transition:transform 0.2s;display:inline-block;}
+.chev.open{transform:rotate(90deg);}
+.ghdetail{padding-bottom:12px;}
+.ghsec{margin-bottom:10px;}
+.ghsectitle{font-family:var(--head);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.ghprow{display:grid;grid-template-columns:1fr 38px 38px 38px 38px;gap:4px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);}
+.ghprow:last-child{border-bottom:none;}
+.ghhead{font-family:var(--head);font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);display:grid;grid-template-columns:1fr 38px 38px 38px 38px;gap:4px;padding-bottom:4px;border-bottom:1px solid var(--border2);margin-bottom:2px;}
+.ghnum{font-family:var(--mono);text-align:right;}
+.bseq{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;}
+.bpill{font-family:var(--mono);font-size:10px;padding:2px 5px;border-radius:4px;border:1px solid;}
+.bpill.pon{background:rgba(168,208,96,0.1);color:var(--lime);border-color:rgba(168,208,96,0.3);}
+.bpill.poff{background:rgba(224,85,85,0.07);color:var(--danger);border-color:rgba(224,85,85,0.2);}
+.bpill.pgk{background:rgba(74,159,212,0.1);color:var(--info);border-color:rgba(74,159,212,0.3);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;z-index:100;}
+.modal{background:var(--card);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:20px 16px 36px;width:100%;max-height:82vh;overflow-y:auto;}
+.mtitle{font-family:var(--head);font-size:17px;font-weight:700;letter-spacing:0.05em;margin-bottom:10px;}
+.msub{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.slist{display:flex;flex-direction:column;gap:6px;}
+.sitem{font-family:var(--head);font-size:14px;font-weight:600;padding:11px 14px;border-radius:var(--radius);background:var(--card2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+.sitem:active{border-color:var(--lime);}
+.odagrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.odacol{background:var(--card2);border-radius:var(--radius);padding:10px;}
+.odactitle{font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+.odactitle.off{color:var(--offcolor);}
+.odactitle.def{color:var(--defcolor);}
+.odaitem{font-family:var(--head);font-size:13px;font-weight:600;padding:6px 8px;border-radius:var(--radius);background:var(--card3);border:1px solid var(--border);margin-bottom:4px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+.odaitem:last-child{margin-bottom:0;}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;}
+.mt8{margin-top:8px;}.mt12{margin-top:12px;}
+.rowb{display:flex;align-items:center;justify-content:space-between;}
+.tm{color:var(--muted);font-size:12px;}
+.tl{color:var(--lime);}.tw{color:var(--warn);}.td{color:var(--danger);}.ti{color:var(--info);}
+.mono{font-family:var(--mono);}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <button class="nav-btn active" onclick="showTab('roster')">Roster</button>
+  <button class="nav-btn" onclick="showTab('setup')">Game Setup</button>
+  <button class="nav-btn" onclick="showTab('game')">Game</button>
+  <button class="nav-btn" onclick="showTab('season')">Season</button>
+</nav>
+<div class="content">
+  <div id="tab-roster" class="tab active"></div>
+  <div id="tab-setup" class="tab"></div>
+  <div id="tab-game" class="tab"></div>
+  <div id="tab-season" class="tab"></div>
+</div>
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()"><div id="modal-content"></div></div>
+</div>
+<script>
+const PLAYERS=[
+  {id:'blair',   name:'Blair',    gk:false},
+  {id:'cj',      name:'CJ',       gk:false},
+  {id:'ellie',   name:'Ellie',    gk:false},
+  {id:'grace',   name:'Grace',    gk:false},
+  {id:'kate',    name:'Kate',     gk:true},
+  {id:'lucyb',   name:'Lucy B',   gk:false},
+  {id:'lucyr',   name:'Lucy R',   gk:true},
+  {id:'maitland',name:'Maitland', gk:false},
+  {id:'shea',    name:'Shea',     gk:false},
+  {id:'tara',    name:'Tara',     gk:true},
+  {id:'wesley',  name:'Wesley',   gk:false},
+];
+const PID=PLAYERS.map(p=>p.id);
+const BSECS=480,HSECS=1500,BMINS=8;
+const pById=id=>PLAYERS.find(p=>p.id===id);
+const pName=id=>{const p=pById(id);return p?p.name:id;};
+const isGK=id=>{const p=pById(id);return p&&p.gk;};
+const pad2=n=>String(Math.floor(n)).padStart(2,'0');
+const todayStr=()=>new Date().toISOString().slice(0,10);
+
+function buildDummy(){
+  function makeOD(on,goalie){
+    const f=on.filter(id=>id!==goalie),od={};
+    f.forEach((id,i)=>od[id]=i<3?'off':'def');
+    od[goalie]='gk';return od;
+  }
+  function makeGame(num,date,att,gkH1,gkH2,planOn){
+    const blockLog=planOn.map((on,gb)=>{
+      const goalie=gb<3?gkH1:gkH2;
+      return{globalBlock:gb,on,goalie,odAssign:makeOD(on,goalie)};
+    });
+    const minuteLog={},odLog={};
+    att.forEach(id=>{minuteLog[id]=0;odLog[id]={off:0,def:0,gk:0};});
+    blockLog.forEach(bl=>{
+      bl.on.forEach(id=>{
+        minuteLog[id]=(minuteLog[id]||0)+BMINS;
+        const role=bl.odAssign[id]||'off';
+        odLog[id][role]=(odLog[id][role]||0)+BMINS;
+      });
+    });
+    return{gameId:'d'+num,gameNumber:num,date,attending:att,goalieH1:gkH1,goalieH2:gkH2,blockLog,minuteLog,odLog};
+  }
+  return[
+    makeGame(1,'2025-03-08',PID,'lucyr','tara',[
+      ['lucyr','grace','kate','lucyb','maitland','shea','wesley'],
+      ['lucyr','blair','cj','ellie','kate','lucyb','tara'],
+      ['lucyr','blair','cj','ellie','grace','maitland','wesley'],
+      ['tara','blair','cj','kate','lucyb','lucyr','shea'],
+      ['tara','ellie','grace','maitland','shea','wesley','lucyr'],
+      ['tara','blair','cj','ellie','grace','kate','lucyb'],
+    ]),
+    makeGame(2,'2025-03-15',PID,'kate','lucyr',[
+      ['kate','blair','ellie','lucyb','maitland','shea','tara'],
+      ['kate','blair','cj','grace','maitland','wesley','tara'],
+      ['kate','cj','ellie','grace','lucyb','shea','wesley'],
+      ['lucyr','blair','cj','ellie','kate','maitland','tara'],
+      ['lucyr','cj','grace','lucyb','shea','tara','wesley'],
+      ['lucyr','blair','ellie','grace','kate','maitland','shea'],
+    ]),
+    makeGame(3,'2025-03-22',PID,'tara','kate',[
+      ['tara','cj','ellie','grace','lucyr','maitland','wesley'],
+      ['tara','blair','cj','kate','lucyb','shea','lucyr'],
+      ['tara','blair','ellie','grace','lucyb','maitland','wesley'],
+      ['kate','blair','cj','ellie','lucyr','shea','tara'],
+      ['kate','grace','lucyb','maitland','shea','tara','wesley'],
+      ['kate','blair','cj','ellie','grace','lucyr','maitland'],
+    ]),
+  ];
+}
+
+function defaultState(){
+  return{
+    seasonLog:[],
+    setup:{gameNumber:4,date:todayStr(),attending:[],goalieH1:null,goalieH2:null,plan:null,locks:[]},
+    game:{active:false,half:1,block:0,timerRunning:false,halfStartEpoch:null,blockStartEpoch:null,
+      pausedHalfElapsed:0,pausedBlockElapsed:0,_pausedAt:null,
+      minuteLog:{},odLog:{},injuredOut:[],liveField:null,odAssign:{},odFlips:[],expandedGames:{}},
+  };
+}
+function loadState(){
+  try{const r=localStorage.getItem('soccer-v3');if(r)return JSON.parse(r);}catch(e){}
+  const s=defaultState();s.seasonLog=buildDummy();return s;
+}
+let S=loadState();
+function save(){localStorage.setItem('soccer-v3',JSON.stringify(S));}
+
+function seasonStats(){
+  const out={};
+  PID.forEach(id=>out[id]={mins:0,off:0,def:0,gk:0,games:0,debt:0});
+  S.seasonLog.forEach(g=>{
+    g.attending.forEach(id=>{
+      out[id].games++;
+      out[id].mins+=(g.minuteLog[id]||0);
+      if(g.odLog&&g.odLog[id]){
+        out[id].off+=(g.odLog[id].off||0);
+        out[id].def+=(g.odLog[id].def||0);
+        out[id].gk+=(g.odLog[id].gk||0);
+      }
+    });
+  });
+  S.seasonLog.forEach(g=>{
+    const n=g.attending.length;if(!n)return;
+    const tot=g.attending.reduce((a,id)=>a+(g.minuteLog[id]||0),0);
+    const avg=tot/n;
+    g.attending.forEach(id=>{out[id].debt+=avg-(g.minuteLog[id]||0);});
+  });
+  return out;
+}
+
+// Generator: solves all 6 blocks together
+// Rules: goalie locked their half, goalie plays 2/3 field blocks in other half,
+// no consecutive sits (including across halftime gb2->gb3), debt-weighted
+function generatePlan(att,gkH1,gkH2,locks){
+  locks=locks||[];
+  const stats=seasonStats();
+  const n=att.length;
+  const fspots=Math.min(6,n-1); // field spots per block (excl goalie)
+  const gOf=i=>i<3?gkH1:gkH2;
+  const on=Array(6).fill(null).map(()=>[]);
+  const sitting=Array(6).fill(null).map(()=>({}));
+
+  // Place goalies
+  for(let b=0;b<6;b++) on[b].push(gOf(b));
+
+  // Locked-on/off from manual swaps
+  const lockedOn=Array(6).fill(null).map(()=>new Set());
+  const lockedOff=Array(6).fill(null).map(()=>new Set());
+  locks.forEach(lk=>{
+    lockedOn[lk.globalBlock].add(lk.fieldId);
+    lockedOff[lk.globalBlock].add(lk.sittingId);
+  });
+  locks.forEach(lk=>{
+    if(!on[lk.globalBlock].includes(lk.fieldId)) on[lk.globalBlock].push(lk.fieldId);
+  });
+
+  // Build targets: field players get debt-weighted blocks, goalies get 2 each
+  const fieldPlayers=att.filter(id=>id!==gkH1&&id!==gkH2);
+  const totalFSlots=6*fspots - 2 - 2; // subtract 4 slots taken by goalies as field players
+  const sorted=[...fieldPlayers].sort((a,b)=>(stats[b]?.debt||0)-(stats[a]?.debt||0));
+  const base=Math.floor(totalFSlots/fieldPlayers.length);
+  const extras=totalFSlots%fieldPlayers.length;
+  const target={};
+  sorted.forEach((id,i)=>target[id]=base+(i<extras?1:0));
+  target[gkH1]=2; target[gkH2]=2;
+  const rem={...target};
+  // deduct already-placed locks
+  locks.forEach(lk=>{if(rem[lk.fieldId]!==undefined)rem[lk.fieldId]--;});
+
+  for(let b=0;b<6;b++){
+    const goalie=gOf(b);
+    const needed=fspots - (on[b].length-1); // how many more field players needed
+    const mustOn=[...lockedOn[b]].filter(id=>!on[b].includes(id));
+    const mustOff=[...lockedOff[b]];
+
+    // Players who sat last block MUST play this block (no consecutive sit)
+    // Also: gkH1 only plays field in blocks 3-5; gkH2 only in blocks 0-2
+    const mustPlay=att.filter(id=>{
+      if(id===goalie)return false;
+      if(on[b].includes(id))return false;
+      if(id===gkH1&&b<3)return false;
+      if(id===gkH2&&b>=3)return false;
+      if(b>0&&sitting[b-1][id]) return true; // sat last block -> must play
+      return false;
+    });
+
+    mustPlay.forEach(id=>{
+      if(!on[b].includes(id)&&on[b].length<fspots+1){
+        on[b].push(id);
+        if(rem[id]!==undefined)rem[id]=Math.max(0,rem[id]-1);
+      }
+    });
+
+    // Fill from eligible: first pass prefers rem>0, second pass allows rem<=0 so we always fill exactly fspots+1
+    const canPlay=id=>{
+      if(id===goalie)return false;
+      if(on[b].includes(id))return false;
+      if(mustOff.includes(id))return false;
+      if(id===gkH1&&b<3)return false;
+      if(id===gkH2&&b>=3)return false;
+      return true;
+    };
+    const eligible=att.filter(id=>canPlay(id)&&(rem[id]===undefined||rem[id]>0));
+    const overflow=att.filter(id=>canPlay(id)&&rem[id]!==undefined&&rem[id]<=0);
+    eligible.sort((a,z)=>{const rd=rem[z]-rem[a];return rd!==0?rd:(stats[z]?.debt||0)-(stats[a]?.debt||0);});
+    overflow.sort((a,z)=>(stats[z]?.debt||0)-(stats[a]?.debt||0));
+    const pool=[...eligible,...overflow];
+    const stillNeed=fspots+1-on[b].length;
+    pool.slice(0,stillNeed).forEach(id=>{
+      on[b].push(id);
+      if(rem[id]!==undefined)rem[id]--;
+    });
+
+    // Mark sitting
+    att.forEach(id=>{
+      if(id===gkH1&&b<3)return;
+      if(id===gkH2&&b>=3)return;
+      sitting[b][id]=!on[b].includes(id);
+    });
+  }
+
+  return on.map((players,gb)=>({
+    half:gb<3?1:2,block:gb%3,globalBlock:gb,goalie:gOf(gb),
+    on:players,off:att.filter(id=>!players.includes(id)),
+  }));
+}
+
+let timerInterval=null;
+function getHS(){
+  if(S.game.timerRunning&&S.game.halfStartEpoch)
+    return Math.min(Math.floor((Date.now()-S.game.halfStartEpoch)/1000),HSECS);
+  return S.game.pausedHalfElapsed;
+}
+function getBS(){
+  if(S.game.timerRunning&&S.game.blockStartEpoch)
+    return Math.min(Math.floor((Date.now()-S.game.blockStartEpoch)/1000),BSECS);
+  return S.game.pausedBlockElapsed;
+}
+function credMins(pids,secs){pids.forEach(id=>{S.game.minuteLog[id]=(S.game.minuteLog[id]||0)+secs/60;});}
+function credOD(blockSecs){
+  const flips=[...S.game.odFlips].sort((a,b)=>a.atBlockSec-b.atBlockSec);
+  const lf=currentLF();const gk=currentGK();
+  lf.forEach(id=>{
+    S.game.odLog[id]=S.game.odLog[id]||{off:0,def:0,gk:0};
+    if(id===gk){S.game.odLog[id].gk=(S.game.odLog[id].gk||0)+blockSecs/60;return;}
+    const pf=flips.filter(f=>f.pid===id);
+    let segs=[],prev=0;
+    pf.forEach(f=>{segs.push({role:f.fromRole,from:prev,to:f.atBlockSec});prev=f.atBlockSec;});
+    segs.push({role:S.game.odAssign[id]||null,from:prev,to:blockSecs});
+    segs.forEach(seg=>{
+      if(!seg.role)return;
+      const dur=Math.max(0,seg.to-seg.from)/60;
+      S.game.odLog[id][seg.role]=(S.game.odLog[id][seg.role]||0)+dur;
+    });
+  });
+}
+function currentLF(){
+  if(S.game.liveField)return S.game.liveField;
+  const gb=(S.game.half-1)*3+S.game.block;
+  return S.setup.plan?[...S.setup.plan[gb].on]:[];
+}
+function currentGK(){
+  const gb=(S.game.half-1)*3+S.game.block;
+  return S.setup.plan&&S.setup.plan[gb]?S.setup.plan[gb].goalie:null;
+}
+function initBlockOD(gb){
+  const pb=S.setup.plan[gb];if(!pb)return;
+  const gk=pb.goalie,field=pb.on.filter(id=>id!==gk),assign={};
+  field.forEach((id,i)=>assign[id]=S.game.odAssign&&S.game.odAssign[id]||(i<3?'off':'def'));
+  S.game.odAssign=assign;S.game.odFlips=[];
+}
+
+// ROSTER
+function renderRoster(){
+  const st=seasonStats();const gp=S.seasonLog.length;
+  let h=`<div class="card"><div class="rowb" style="margin-bottom:12px">
+    <span class="card-title" style="margin-bottom:0">Team Roster</span>
+    <button class="btn btn-danger btn-sm" onclick="resetConfirm()">Reset All</button>
+  </div><div class="tm" style="margin-bottom:12px">Season games: <span class="mono tl">${gp}</span></div>`;
+  const sorted=[...PLAYERS].sort((a,b)=>(st[b.id]?.debt||0)-(st[a.id]?.debt||0));
+  sorted.forEach(p=>{
+    const d=st[p.id]||{mins:0,debt:0,games:0,off:0,def:0,gk:0};
+    const ds=d.debt>0.5?`+${d.debt.toFixed(0)}`:d.debt<-0.5?d.debt.toFixed(0):'0';
+    const dc=d.debt>0.5?'var(--danger)':d.debt<-0.5?'var(--lime)':'var(--muted)';
+    h+=`<div class="rrow"><div>
+      <div style="display:flex;align-items:center;gap:6px">${p.gk?'<span class="badge bgk">GK</span>':''}<span class="rname">${p.name}</span></div>
+      <div class="tm mt8">${Math.round(d.mins)}m total &nbsp;·&nbsp;
+        <span style="color:var(--offcolor)">${Math.round(d.off)}m OFF</span> &nbsp;
+        <span style="color:var(--defcolor)">${Math.round(d.def)}m DEF</span>
+        ${d.gk>0?` &nbsp;<span class="ti">${Math.round(d.gk)}m GK</span>`:''}
+        &nbsp;·&nbsp; <span style="color:${dc};font-family:var(--mono)">${ds}m debt</span>
+      </div></div></div>`;
+  });
+  h+=`</div>`;
+  h+=`<div class="card"><div class="card-title">Key</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.9">
+      <span style="color:var(--danger)">Positive debt (+)</span> = sat out more than average this season → priority for more playing time next game.<br>
+      <span style="color:var(--lime)">Negative debt (−)</span> = played more than average → can sit a bit more next game without falling behind.<br>
+      <span style="color:var(--offcolor)">OFF</span> = offensive field minutes &nbsp;·&nbsp; <span style="color:var(--defcolor)">DEF</span> = defensive field minutes &nbsp;·&nbsp; GK = goalkeeper minutes.
+    </div></div>`;
+  document.getElementById('tab-roster').innerHTML=h;
+}
+
+// SETUP
+function renderSetup(){
+  const{setup}=S;const{goalieH1,goalieH2}=setup;const st=seasonStats();
+  // Opt-out model: if attending is empty and no game active, default everyone in
+  if(setup.attending.length===0&&!S.game.active){
+    setup.attending=PID.slice();
+    save();
+  }
+  const{attending}=setup;
+  let h=`<div class="card"><div class="card-title">Game Info</div>
+    <div class="lbl">Game #</div>
+    <input type="number" value="${setup.gameNumber}" onchange="S.setup.gameNumber=+this.value;save()" style="margin-bottom:10px">
+    <div class="lbl">Date</div>
+    <input type="date" value="${setup.date}" onchange="S.setup.date=this.value;save()">
+  </div>`;
+  h+=`<div class="card"><div class="card-title">Who's Here?</div>
+    <div class="tm" style="margin-bottom:10px">Everyone is in by default — tap to mark absent.</div>
+    <div class="pgrid">`;
+  [...PLAYERS].sort((a,b)=>(st[b.id]?.debt||0)-(st[a.id]?.debt||0)).forEach(p=>{
+    const isOn=attending.includes(p.id),d=st[p.id]?.debt||0;
+    const ds=d>0.5?` +${d.toFixed(0)}`:d<-0.5?` ${d.toFixed(0)}`:'';
+    // on = attending (green), off = absent (dim)
+    h+=`<div class="chip ${isOn?'on':''} ${p.gk?'gkchip':''}" onclick="toggleAtt('${p.id}')">${p.name}${ds?`<span style="font-size:10px;opacity:0.7">${ds}</span>`:''}</div>`;
+  });
+  h+=`</div><div class="tm" style="margin-top:10px">${attending.length} here &nbsp;·&nbsp; ${Math.max(0,attending.length-7)} sit each block</div></div>`;
+
+  if(attending.length>=7){
+    const gks=attending.filter(isGK);
+    h+=`<div class="card"><div class="card-title">Goalies</div><div class="half-setup">
+      <div class="half-card"><div class="half-lbl">1st Half</div>
+        <select onchange="S.setup.goalieH1=this.value;S.setup.plan=null;S.setup.locks=[];save();renderSetup()">
+          <option value="">— pick —</option>
+          ${gks.map(id=>`<option value="${id}" ${goalieH1===id?'selected':''}>${pName(id)}</option>`).join('')}
+        </select></div>
+      <div class="half-card"><div class="half-lbl">2nd Half</div>
+        <select onchange="S.setup.goalieH2=this.value;S.setup.plan=null;S.setup.locks=[];save();renderSetup()">
+          <option value="">— pick —</option>
+          ${gks.map(id=>`<option value="${id}" ${goalieH2===id?'selected':''}>${pName(id)}</option>`).join('')}
+        </select></div>
+    </div></div>`;
+  }
+  const canGen=attending.length>=7&&goalieH1&&goalieH2&&goalieH1!==goalieH2;
+  if(canGen&&!setup.plan) h+=`<button class="btn btn-primary btn-full" onclick="doGen()">Generate Sub Plan</button>`;
+  if(setup.plan){
+    h+=planPreview();
+    h+=`<div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-secondary" style="flex:1" onclick="doGen()">↺ Regenerate</button>
+      <button class="btn btn-primary" style="flex:1" onclick="startGame()">Start Game →</button>
+    </div>
+    <div class="tm" style="margin-top:8px;text-align:center">Tap a red sitting player to swap manually. Locks kept on regenerate.</div>`;
+  }
+  document.getElementById('tab-setup').innerHTML=h;
+}
+
+function planPreview(){
+  const{plan,locks,attending}=S.setup;
+  const bc={};attending.forEach(id=>bc[id]=0);
+  plan.forEach(b=>b.on.forEach(id=>{if(bc[id]!==undefined)bc[id]++;}));
+  let h=`<div class="card" style="margin-top:12px"><div class="card-title">Sub Plan</div>`;
+  attending.forEach(id=>{
+    const ct=bc[id]||0,pct=Math.round(ct/6*100);
+    const color=ct>=4?'var(--lime)':ct===3?'var(--warn)':'var(--danger)';
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <span style="font-family:var(--head);font-size:13px;font-weight:600;width:72px">${pName(id)}</span>
+      <div style="flex:1;height:5px;background:var(--card2);border-radius:3px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div></div>
+      <span style="font-family:var(--mono);font-size:12px;color:${color};width:40px;text-align:right">${ct}/6</span>
+    </div>`;
+  });
+  h+=`<div class="divider"></div>`;
+  for(let half=1;half<=2;half++){
+    h+=`<div class="lbl" style="margin-bottom:6px">${half===1?'1st':'2nd'} Half</div><div class="bgrid">`;
+    plan.filter(b=>b.half===half).forEach((b,i)=>{
+      h+=`<div class="bcell"><div class="bclbl">${i*8}&ndash;${Math.min((i+1)*8,25)}m</div>`;
+      b.on.forEach(id=>{
+        const isGk=id===b.goalie;
+        h+=`<div class="bp ${isGk?'bpgk':'bpon'}">${pName(id)}${isGk?' 🥅':''}</div>`;
+      });
+      b.off.forEach(id=>{
+        const lk=locks&&locks.some(l=>l.globalBlock===b.globalBlock&&l.sittingId===id);
+        h+=`<div class="bp bpoff" onclick="openSwap(${b.globalBlock},'${id}')">↓ ${pName(id)}${lk?'<span class="lockico">🔒</span>':''}</div>`;
+      });
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+    if(half===1)h+=`<div class="divider"></div>`;
+  }
+  return h+`</div>`;
+}
+
+function openSwap(gb,sid){
+  const pb=S.setup.plan[gb];if(!pb)return;
+  let html=`<div class="mtitle">Swap in ${pName(sid)}</div>
+    <div class="msub">Block ${pb.block+1} &middot; ${pb.half===1?'1st':'2nd'} half &middot; Pick who comes off.</div>
+    <div class="slist">`;
+  pb.on.filter(id=>id!==pb.goalie).forEach(id=>{
+    html+=`<div class="sitem" onclick="doSwap(${gb},'${sid}','${id}')">
+      <span>↓ ${pName(id)}</span><span class="tl">↑ ${pName(sid)}</span></div>`;
+  });
+  html+=`</div><div style="margin-top:12px"><button class="btn btn-secondary btn-full" onclick="closeModal()">Cancel</button></div>`;
+  showModal(html);
+}
+function doSwap(gb,sid,fid){
+  const b=S.setup.plan[gb];if(!b){closeModal();return;}
+  S.setup.locks=S.setup.locks.filter(l=>!(l.globalBlock===gb&&(l.sittingId===sid||l.fieldId===fid||l.sittingId===fid||l.fieldId===sid)));
+  S.setup.locks.push({globalBlock:gb,sittingId:fid,fieldId:sid});
+  b.on=b.on.map(id=>id===fid?sid:id);
+  b.off=b.off.map(id=>id===sid?fid:id);
+  save();closeModal();renderSetup();
+}
+function toggleAtt(id){
+  const idx=S.setup.attending.indexOf(id);
+  if(idx>=0)S.setup.attending.splice(idx,1);else S.setup.attending.push(id);
+  S.setup.plan=null;S.setup.locks=[];save();renderSetup();
+}
+function doGen(){
+  const{attending,goalieH1,goalieH2,locks}=S.setup;
+  if(!goalieH1||!goalieH2){alert('Pick both goalies first.');return;}
+  if(goalieH1===goalieH2){alert('Goalies must be different.');return;}
+  if(attending.length<7){alert('Need at least 7 players.');return;}
+  S.setup.plan=generatePlan(attending,goalieH1,goalieH2,locks||[]);
+  save();renderSetup();
+}
+function startGame(){
+  if(!S.setup.plan){alert('Generate a plan first.');return;}
+  clearInterval(timerInterval);
+  const lf=[...S.setup.plan[0].on];
+  const gk=S.setup.plan[0].goalie;
+  const fld=lf.filter(id=>id!==gk);
+  const initOD={};fld.forEach((id,i)=>initOD[id]=i<3?'off':'def');
+  S.game={active:true,half:1,block:0,timerRunning:false,
+    halfStartEpoch:null,blockStartEpoch:null,pausedHalfElapsed:0,pausedBlockElapsed:0,_pausedAt:null,
+    minuteLog:{},odLog:{},injuredOut:[],liveField:lf,odAssign:initOD,odFlips:[],expandedGames:{}};
+  S.setup.attending.forEach(id=>{S.game.minuteLog[id]=0;S.game.odLog[id]={off:0,def:0,gk:0};});
+  save();showTab('game');
+}
+
+// GAME
+function renderGame(){
+  if(!S.game.active){
+    document.getElementById('tab-game').innerHTML=`<div class="empty"><div style="font-size:32px;margin-bottom:10px">⚽</div>
+      <div>No active game.</div><div class="tm" style="margin-top:6px">Go to Game Setup.</div>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="showTab('setup')">Go to Setup</button>
+    </div>`;return;
+  }
+  const{half,block,injuredOut,odAssign}=S.game;
+  const gb=(half-1)*3+block;
+  const nextPb=gb+1<6?S.setup.plan[gb+1]:null;
+  const lf=currentLF();const gk=currentGK();
+  const hs=getHS(),bs=getBS();
+  const br=Math.max(0,BSECS-bs);
+  const hm=Math.floor(hs/60),hsr=hs%60,bm=Math.floor(br/60),bsr=br%60;
+  const subSoon=br<=90&&br>0,subNow=br===0;
+  const allOn=new Set(lf);
+
+  let h='';
+  h+=`<div class="halfsw">
+    <button class="halfbtn ${half===1?'active':''}" onclick="confirmSwitchHalf(1)">1st Half</button>
+    <button class="halfbtn ${half===2?'active':''}" onclick="confirmSwitchHalf(2)">2nd Half</button>
+  </div>`;
+
+  h+=`<div class="timer-display">
+    <div class="tmmain" id="timer-main">${pad2(hm)}:${pad2(hsr)}</div>
+    <div class="tmsub" id="timer-sub">
+      ${subNow?`<span style="color:var(--danger);font-size:16px">⚑ SUB TIME</span>`
+        :subSoon?`Sub in: <span style="color:var(--danger)">${pad2(bm)}:${pad2(bsr)}</span>`
+        :`Sub in: <span>${pad2(bm)}:${pad2(bsr)}</span>`}
+    </div>
+    <div class="tmctrl">
+      ${S.game.timerRunning
+        ?`<button class="btn btn-secondary" onclick="pauseTimer()">⏸ Pause</button>`
+        :`<button class="btn btn-primary" onclick="startTimer()">▶ ${hs>0?'Resume':'Start'}</button>`}
+      <button class="btn btn-secondary" onclick="nextBlock()">Next Block →</button>
+      <button class="btn btn-warn btn-sm" onclick="openInjSub()">⚠ Sub Out</button>
+    </div>
+  </div>`;
+
+  if(injuredOut.length>0)
+    h+=`<div class="alert adanger">Out (injured): ${injuredOut.map(id=>`<strong>${pName(id)}</strong>`).join(', ')}
+      <button class="btn btn-secondary btn-sm" style="margin-left:8px;margin-top:4px" onclick="openReturnInj()">Return player</button>
+    </div>`;
+
+  // Build sectioned field layout
+  const offPlayers=lf.filter(id=>id!==gk&&(odAssign[id]==='off'||!odAssign[id]));
+  const defPlayers=lf.filter(id=>id!==gk&&odAssign[id]==='def');
+
+  function fslotHtml(id){
+    const isGk=id===gk;
+    const role=isGk?'gk':(odAssign[id]||'off');
+    const sc=isGk?'fgk':role==='off'?'foff':'fdef';
+    const badge=isGk
+      ?`<span class="odbadge odnone">GK</span>`
+      :`<span id="od-badge-${id}" class="odbadge ${role==='off'?'odoff':'oddef'}" onclick="flipOD('${id}','${role}')">${role==='off'?'OFF':'DEF'}</span>`;
+    return`<div class="fslot ${sc}"><div class="fpn">${pName(id)}</div>${badge}</div>`;
+  }
+
+  h+=`<div class="card"><div class="rowb" style="margin-bottom:10px">
+    <div class="card-title" style="margin-bottom:0">On field — Block ${block+1}/3</div>
+    <button class="btn btn-secondary btn-sm" onclick="openODAssign()">Edit O/D</button>
+  </div>`;
+
+  if(offPlayers.length>0){
+    h+=`<div class="field-section">
+      <div class="field-section-label loff">Offense</div>
+      <div class="frow">${offPlayers.map(fslotHtml).join('')}</div>
+    </div>`;
+  }
+  if(defPlayers.length>0){
+    h+=`<div class="field-section">
+      <div class="field-section-label ldef">Defense</div>
+      <div class="frow">${defPlayers.map(fslotHtml).join('')}</div>
+    </div>`;
+  }
+  h+=`<div class="field-section">
+    <div class="field-section-label lgk">Goalkeeper</div>
+    <div class="frow">${fslotHtml(gk)}</div>
+  </div>`;
+  h+=`</div>`;
+
+  const bench=S.setup.attending.filter(id=>!allOn.has(id)&&!injuredOut.includes(id));
+  if(bench.length)
+    h+=`<div class="card"><div class="card-title">Bench</div>
+      <div class="schips">${bench.map(id=>`<div class="choff">${pName(id)}</div>`).join('')}</div></div>`;
+
+  if(nextPb){
+    const nextOn=new Set(nextPb.on.filter(id=>!S.game.injuredOut.includes(id)));
+    const comingOn=[...nextOn].filter(id=>!allOn.has(id));
+    const comingOff=[...allOn].filter(id=>!nextOn.has(id));
+    if(comingOn.length||comingOff.length)
+      h+=`<div class="card"><div class="card-title">Next sub — Block ${block+2}</div>
+        ${comingOn.length?`<div class="lbl" style="margin-bottom:5px">Coming on</div><div class="schips" style="margin-bottom:10px">${comingOn.map(id=>`<div class="chon">↑ ${pName(id)}</div>`).join('')}</div>`:''}
+        ${comingOff.length?`<div class="lbl" style="margin-bottom:5px">Coming off</div><div class="schips">${comingOff.map(id=>`<div class="choff">↓ ${pName(id)}</div>`).join('')}</div>`:''}
+      </div>`;
+  } else if(block===2){
+    if(half===1)h+=`<div class="alert ainfo">End of 1st half. Hit Next Block or switch to 2nd half.</div>`;
+    else h+=`<div class="alert aok">End of game!</div><button class="btn btn-primary btn-full mt8" onclick="finishGame()">Finish Game &amp; Log</button>`;
+  }
+
+  h+=`<div class="card mt12"><div class="card-title">Roster Changes</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" onclick="openLate()">+ Late Arrival</button>
+      <button class="btn btn-secondary btn-sm" onclick="openEarly()">− Early Leave</button>
+    </div></div>`;
+
+  document.getElementById('tab-game').innerHTML=h;
+  restartTick();
+}
+
+function flipOD(pid,cur){
+  const bs=getBS();const next=cur==='off'?'def':'off';
+  S.game.odFlips.push({pid,fromRole:cur,toRole:next,atBlockSec:bs});
+  S.game.odAssign[pid]=next;
+  save();renderGame();
+}
+function openODAssign(){
+  rebuildODModal();
+  document.getElementById('modal-overlay').style.display='flex';
+}
+function rebuildODModal(){
+  const lf=currentLF();const gk=currentGK();const field=lf.filter(id=>id!==gk);const a=S.game.odAssign;
+  const html=`<div class="mtitle">O/D Assignment</div><div class="msub">Tap a player to switch sides. Press Done when finished.</div>
+    <div class="odagrid">
+      <div class="odacol"><div class="odactitle off">Offense</div>
+        ${field.filter(id=>a[id]==='off'||!a[id]).map(id=>`<div class="odaitem" onclick="flipODM('${id}')"><span>${pName(id)}</span><span style="color:var(--defcolor);font-size:11px">→ DEF</span></div>`).join('')}
+      </div>
+      <div class="odacol"><div class="odactitle def">Defense</div>
+        ${field.filter(id=>a[id]==='def').map(id=>`<div class="odaitem" onclick="flipODM('${id}')"><span>${pName(id)}</span><span style="color:var(--offcolor);font-size:11px">→ OFF</span></div>`).join('')}
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;text-align:center">GK (${pName(currentGK())}) is excluded</div>
+    <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doneODAssign()">Done</button>`;
+  document.getElementById('modal-content').innerHTML=html;
+}
+function flipODM(pid){
+  const bs=getBS();const cur=S.game.odAssign[pid]||'off';const next=cur==='off'?'def':'off';
+  S.game.odFlips.push({pid,fromRole:cur,toRole:next,atBlockSec:bs});
+  S.game.odAssign[pid]=next;
+  save();
+  // Rebuild modal content only — do NOT close modal or re-render game tab
+  rebuildODModal();
+}
+function doneODAssign(){
+  closeModal();
+  // Now re-render the game tab to reflect final OD state
+  renderGame();
+}
+
+function restartTick(){
+  clearInterval(timerInterval);
+  if(!S.game.timerRunning)return;
+  timerInterval=setInterval(()=>{
+    const hs=getHS(),bs=getBS(),br=Math.max(0,BSECS-bs);
+    const el=document.getElementById('timer-main');
+    if(el)el.textContent=pad2(Math.floor(hs/60))+':'+pad2(hs%60);
+    const sub=document.getElementById('timer-sub');
+    if(sub){
+      const bm=Math.floor(br/60),bsr=br%60;
+      if(br===0)sub.innerHTML=`<span style="color:var(--danger);font-size:16px">⚑ SUB TIME</span>`;
+      else if(br<=90)sub.innerHTML=`Sub in: <span style="color:var(--danger)">${pad2(bm)}:${pad2(bsr)}</span>`;
+      else sub.innerHTML=`Sub in: <span>${pad2(bm)}:${pad2(bsr)}</span>`;
+    }
+  },500);
+}
+function startTimer(){
+  const now=Date.now();
+  if(!S.game.halfStartEpoch){
+    S.game.halfStartEpoch=now-S.game.pausedHalfElapsed*1000;
+    S.game.blockStartEpoch=now-S.game.pausedBlockElapsed*1000;
+  } else {
+    const dur=now-(S.game._pausedAt||now);
+    S.game.halfStartEpoch+=dur;S.game.blockStartEpoch+=dur;
+  }
+  S.game.timerRunning=true;save();renderGame();
+}
+function pauseTimer(){
+  S.game.pausedHalfElapsed=getHS();S.game.pausedBlockElapsed=getBS();
+  S.game._pausedAt=Date.now();S.game.timerRunning=false;clearInterval(timerInterval);save();renderGame();
+}
+function advBlock(){credMins(currentLF(),getBS());credOD(getBS());S.game.odFlips=[];}
+function nextBlock(){
+  const{half,block}=S.game;advBlock();
+  if(block<2){
+    S.game.block++;S.game.pausedBlockElapsed=0;
+    if(S.game.timerRunning)S.game.blockStartEpoch=Date.now();else S.game.blockStartEpoch=null;
+    const newGb=(half-1)*3+S.game.block;
+    S.game.liveField=[...S.setup.plan[newGb].on].filter(id=>!S.game.injuredOut.includes(id));
+    initBlockOD(newGb);
+  } else if(half===1){
+    S.game.half=2;S.game.block=0;S.game.timerRunning=false;
+    S.game.halfStartEpoch=null;S.game.blockStartEpoch=null;
+    S.game.pausedHalfElapsed=0;S.game.pausedBlockElapsed=0;
+    clearInterval(timerInterval);
+    S.game.liveField=[...S.setup.plan[3].on].filter(id=>!S.game.injuredOut.includes(id));
+    initBlockOD(3);
+  }
+  save();renderGame();
+}
+function confirmSwitchHalf(h){
+  if(S.game.half===h)return;
+  showModal(`<div class="mtitle">Switch to ${h===1?'1st':'2nd'} Half?</div>
+    <div class="msub">Resets block timer.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="doSwitchHalf(${h})">Yes</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+function doSwitchHalf(h){
+  S.game.half=h;S.game.block=0;S.game.timerRunning=false;
+  S.game.halfStartEpoch=null;S.game.blockStartEpoch=null;
+  S.game.pausedHalfElapsed=0;S.game.pausedBlockElapsed=0;
+  clearInterval(timerInterval);
+  const gb=(h-1)*3;
+  S.game.liveField=[...S.setup.plan[gb].on];
+  initBlockOD(gb);
+  save();closeModal();renderGame();
+}
+
+// injury sub
+function openInjSub(){
+  const lf=currentLF();const gk=currentGK();
+  let html=`<div class="mtitle">⚠ Emergency Sub</div><div class="msub">Who is coming off?</div><div class="slist">`;
+  lf.filter(id=>id!==gk).forEach(id=>{
+    html+=`<div class="sitem" onclick="injStep2('${id}')">${pName(id)} <span class="tm" style="font-size:12px">comes off</span></div>`;
+  });
+  html+=`</div><div style="margin-top:12px"><button class="btn btn-secondary btn-full" onclick="closeModal()">Cancel</button></div>`;
+  showModal(html);
+}
+function injStep2(outId){
+  const allOn=new Set(currentLF());
+  const bench=S.setup.attending.filter(id=>!allOn.has(id)&&!S.game.injuredOut.includes(id));
+  let html=`<div class="mtitle">⚠ Emergency Sub</div><div class="msub"><strong>${pName(outId)}</strong> coming off. Who goes on?</div><div class="slist">`;
+  bench.forEach(id=>{html+=`<div class="sitem" onclick="doInjSub('${outId}','${id}')">${pName(id)} <span class="tl" style="font-size:12px">goes on</span></div>`;});
+  if(!bench.length)html+=`<div class="tm" style="padding:8px">No one on bench.</div>`;
+  html+=`</div>
+    <div style="margin-top:8px"><button class="btn btn-warn btn-sm btn-full" onclick="injNoRep('${outId}')">No replacement (play short)</button></div>
+    <div style="margin-top:8px"><button class="btn btn-secondary btn-full" onclick="closeModal()">Cancel</button></div>`;
+  showModal(html);
+}
+function doInjSub(outId,inId){
+  const bs=getBS();const outMins=bs>=BSECS/2?BMINS:bs/60;
+  S.game.minuteLog[outId]=(S.game.minuteLog[outId]||0)+outMins;
+  const role=S.game.odAssign[outId]||'off';
+  S.game.odLog[outId]=S.game.odLog[outId]||{off:0,def:0,gk:0};
+  S.game.odLog[outId][role]=(S.game.odLog[outId][role]||0)+outMins;
+  S.game.injuredOut.push(outId);
+  S.game.liveField=currentLF().map(id=>id===outId?inId:id);
+  if(!S.game.odAssign[inId])S.game.odAssign[inId]=role;
+  const{half,block}=S.game;
+  for(let b=block+1;b<3;b++){
+    const pb=S.setup.plan[(half-1)*3+b];
+    if(pb.on.includes(outId)){pb.on=pb.on.map(id=>id===outId?inId:id);pb.off=pb.off.filter(id=>id!==inId);pb.off.push(outId);}
+  }
+  save();closeModal();renderGame();
+}
+function injNoRep(outId){
+  const bs=getBS();const outMins=bs>=BSECS/2?BMINS:bs/60;
+  S.game.minuteLog[outId]=(S.game.minuteLog[outId]||0)+outMins;
+  S.game.injuredOut.push(outId);
+  S.game.liveField=currentLF().filter(id=>id!==outId);
+  save();closeModal();renderGame();
+}
+function openReturnInj(){
+  let html=`<div class="mtitle">Return Injured</div><div class="msub">Confirm player cleared to return to bench.</div><div class="slist">`;
+  S.game.injuredOut.forEach(id=>{html+=`<div class="sitem" onclick="doReturnInj('${id}')">${pName(id)}</div>`;});
+  html+=`</div><div style="margin-top:12px"><button class="btn btn-secondary btn-full" onclick="closeModal()">Cancel</button></div>`;
+  showModal(html);
+}
+function doReturnInj(id){
+  S.game.injuredOut=S.game.injuredOut.filter(p=>p!==id);
+  const{half,block}=S.game;
+  for(let b=block+1;b<3;b++){
+    const pb=S.setup.plan[(half-1)*3+b];
+    if(!pb.on.includes(id)&&!pb.off.includes(id))pb.off.push(id);
+  }
+  save();closeModal();renderGame();
+}
+
+// late / early
+function openLate(){
+  const here=new Set(S.setup.attending);const notHere=PLAYERS.filter(p=>!here.has(p.id));
+  if(!notHere.length){showModal(`<div class="mtitle">Late Arrival</div><div class="msub">Everyone is here.</div><button class="btn btn-secondary btn-full" onclick="closeModal()">OK</button>`);return;}
+  let html=`<div class="mtitle">Late Arrival</div><div class="msub">Who just showed up?</div><div class="slist">`;
+  notHere.forEach(p=>{html+=`<div class="sitem" onclick="doLate('${p.id}')">${p.name}</div>`;});
+  html+=`</div><div style="margin-top:12px"><button class="btn btn-secondary btn-full" onclick="closeModal()">Cancel</button></div>`;
+  showModal(html);
+}
+function doLate(id){
+  if(!S.setup.attending.includes(id))S.setup.attending.push(id);
+  S.game.minuteLog[id]=S.game.minuteLog[id]||0;
+  S.game.odLog[id]=S.game.odLog[id]||{off:0,def:0,gk:0};
+  const{half,block}=S.game;
+  for(let h=1;h<=2;h++){for(let b=0;b<3;b++){
+    if(h===half&&b<=block)continue;
+    const pb=S.setup.plan[(h-1)*3+b];
+    if(!pb.on.includes(id)&&!pb.off.includes(id))pb.off.push(id);
+  }}
+  save();closeModal();renderGame();
+}
+function openEarly(){
+  const allOn=new Set(currentLF());
+  const cands=S.setup.attending.filter(id=>!S.game.injuredOut.includes(id));
+  let html=`<div class="mtitle">Early Leave</div><div class="msub">Who is leaving?</div><div class="slist">`;
+  cands.forEach(id=>{
+    const on=allOn.has(id);
+    html+=`<div class="sitem" style="${on?'border-color:rgba(224,85,85,0.4)':''}" onclick="doEarly('${id}')">
+      ${pName(id)} ${on?'<span class="td" style="font-size:11px">(on field)</span>':''}
+    </div>`;
+  });
+  html+=`</div><div style="margin-top:12px"><button class="btn btn-secondary btn-full" onclick="closeModal()">Cancel</button></div>`;
+  showModal(html);
+}
+function doEarly(id){
+  const lf=currentLF();
+  if(lf.includes(id)){credMins([id],getBS());S.game.liveField=lf.filter(p=>p!==id);}
+  S.setup.attending=S.setup.attending.filter(p=>p!==id);
+  const{half,block}=S.game;
+  for(let h=1;h<=2;h++){for(let b=0;b<3;b++){
+    if(h===half&&b<=block)continue;
+    const pb=S.setup.plan[(h-1)*3+b];
+    pb.on=pb.on.filter(p=>p!==id);pb.off=pb.off.filter(p=>p!==id);
+  }}
+  save();closeModal();renderGame();
+}
+
+function finishGame(){
+  advBlock();clearInterval(timerInterval);
+  const blockLog=S.setup.plan.map(pb=>({globalBlock:pb.globalBlock,on:pb.on,goalie:pb.goalie,odAssign:{}}));
+  S.seasonLog.push({
+    gameId:'game-'+Date.now(),gameNumber:S.setup.gameNumber,date:S.setup.date,
+    attending:[...S.setup.attending],goalieH1:S.setup.goalieH1,goalieH2:S.setup.goalieH2,
+    blockLog,minuteLog:{...S.game.minuteLog},odLog:{...S.game.odLog},
+  });
+  S.game.active=false;
+  S.setup.gameNumber++;S.setup.plan=null;S.setup.attending=[];
+  S.setup.goalieH1=null;S.setup.goalieH2=null;S.setup.locks=[];
+  save();showTab('season');
+}
+
+// SEASON
+function renderSeason(){
+  const st=seasonStats();const gp=S.seasonLog.length;
+  let h='';
+  h+=`<div class="card"><div class="rowb" style="margin-bottom:10px">
+    <span class="card-title" style="margin-bottom:0">Season Summary</span>
+    <button class="btn btn-danger btn-sm" onclick="resetConfirm()">Reset</button>
+  </div>
+  <div class="rephead"><div>Player</div><div style="text-align:right">Min</div><div style="text-align:right">OFF</div><div style="text-align:right">DEF</div><div style="text-align:right">Debt</div></div>`;
+  const sorted=[...PLAYERS].sort((a,b)=>(st[b.id]?.debt||0)-(st[a.id]?.debt||0));
+  const maxD=Math.max(...sorted.map(p=>Math.abs(st[p.id]?.debt||0)),1);
+  sorted.forEach(p=>{
+    const d=st[p.id]||{mins:0,debt:0,off:0,def:0,gk:0};
+    const ds=d.debt>0.5?`+${d.debt.toFixed(0)}`:d.debt<-0.5?d.debt.toFixed(0):'—';
+    const dc=d.debt>1?'var(--danger)':d.debt<-1?'var(--lime)':'var(--muted)';
+    const pct=Math.min(Math.abs(d.debt)/maxD*100,100);
+    h+=`<div class="reprow">
+      <div><div class="repn">${p.name}${p.gk?` <span class="badge bgk" style="font-size:9px">GK</span>`:''}</div>
+        <div class="dbar" style="width:85%"><div class="dfill ${d.debt>0?'dpos':'dneg'}" style="width:${pct}%"></div></div></div>
+      <div class="repnum">${Math.round(d.mins)}</div>
+      <div class="repnum" style="color:var(--offcolor)">${Math.round(d.off)}</div>
+      <div class="repnum" style="color:var(--defcolor)">${Math.round(d.def)}</div>
+      <div class="repnum" style="color:${dc}">${ds}</div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  const hi=sorted.filter(p=>(st[p.id]?.debt||0)>2);
+  if(hi.length)h+=`<div class="alert awarn">Priority next game: <strong>${hi.map(p=>p.name).join(', ')}</strong></div>`;
+
+  h+=`<div class="card"><div class="card-title">How to Read This</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.9">
+      <strong style="color:var(--white)">Debt bar</strong> under each name: length shows how far above/below average. <span style="color:var(--danger)">Red = positive debt</span> (sat more than average → owed time). <span style="color:var(--lime)">Green = negative debt</span> (played more than average → can give less).<br>
+      <strong style="color:var(--white)">Debt number</strong>: minutes above (+) or below (−) the team average across all games attended.<br>
+      <strong style="color:var(--white)">OFF / DEF columns</strong>: total minutes played in each position role this season.
+    </div></div>`;
+
+  if(gp>0){
+    h+=`<div class="card"><div class="card-title">Game History</div>`;
+    const eg=S.game.expandedGames||{};
+    [...S.seasonLog].reverse().forEach(g=>{
+      const isOpen=!!eg[g.gameId];
+      h+=`<div class="ghrow">
+        <div class="ghhdr" onclick="toggleGH('${g.gameId}')">
+          <div>
+            <div class="ghtitle">Game ${g.gameNumber} &mdash; ${g.date}</div>
+            <div class="tm" style="font-size:11px;margin-top:2px">${g.attending.length} players &middot; GK: ${pName(g.goalieH1)} (H1) ${pName(g.goalieH2)} (H2)</div>
+          </div>
+          <span class="chev ${isOpen?'open':''}">▶</span>
+        </div>
+        ${isOpen?renderGHDetail(g):''}
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+  document.getElementById('tab-season').innerHTML=h;
+}
+
+function renderGHDetail(g){
+  let h=`<div class="ghdetail">`;
+  // Playing time table
+  h+=`<div class="ghsec"><div class="ghsectitle">Playing Time</div>
+    <div class="ghhead"><div>Player</div><div style="text-align:right">Total</div><div style="text-align:right">OFF</div><div style="text-align:right">DEF</div><div style="text-align:right">GK</div></div>`;
+  [...g.attending].sort((a,b)=>(g.minuteLog[b]||0)-(g.minuteLog[a]||0)).forEach(id=>{
+    const m=g.minuteLog[id]||0;const od=g.odLog&&g.odLog[id]?g.odLog[id]:{off:0,def:0,gk:0};
+    h+=`<div class="ghprow">
+      <div style="font-family:var(--head);font-weight:600">${pName(id)}</div>
+      <div class="ghnum">${Math.round(m)}</div>
+      <div class="ghnum" style="color:var(--offcolor)">${Math.round(od.off||0)}</div>
+      <div class="ghnum" style="color:var(--defcolor)">${Math.round(od.def||0)}</div>
+      <div class="ghnum ti">${Math.round(od.gk||0)}</div>
+    </div>`;
+  });
+  h+=`</div>`;
+  // Block rotation
+  if(g.blockLog&&g.blockLog.length){
+    h+=`<div class="ghsec"><div class="ghsectitle">Block Rotation</div>`;
+    g.attending.forEach(id=>{
+      h+=`<div style="margin-bottom:6px"><div style="font-family:var(--head);font-size:13px;font-weight:600;margin-bottom:3px">${pName(id)}</div><div class="bseq">`;
+      for(let gb=0;gb<6;gb++){
+        const bl=g.blockLog[gb];if(!bl)continue;
+        const half=gb<3?1:2,bn=gb%3+1;const lbl=`H${half}B${bn}`;
+        const isGk=bl.goalie===id,isOn=bl.on.includes(id);
+        if(isGk)h+=`<div class="bpill pgk">${lbl} GK</div>`;
+        else if(isOn)h+=`<div class="bpill pon">${lbl}</div>`;
+        else h+=`<div class="bpill poff">${lbl}</div>`;
+      }
+      h+=`</div></div>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`<div style="margin-top:8px"><button class="btn btn-danger btn-sm" onclick="deleteGame('${g.gameId}')">Delete game</button></div>`;
+  h+=`</div>`;
+  return h;
+}
+
+function toggleGH(gid){
+  if(!S.game.expandedGames)S.game.expandedGames={};
+  S.game.expandedGames[gid]=!S.game.expandedGames[gid];
+  save();renderSeason();
+}
+
+// MODALS / UTIL
+function showModal(html){document.getElementById('modal-content').innerHTML=html;document.getElementById('modal-overlay').style.display='flex';}
+function closeModal(){document.getElementById('modal-overlay').style.display='none';}
+function deleteGame(gid){
+  S.seasonLog=S.seasonLog.filter(g=>g.gameId!==gid);
+  if(S.game.expandedGames)delete S.game.expandedGames[gid];
+  save();renderSeason();
+}
+function resetConfirm(){
+  showModal(`<div class="mtitle">Reset Everything?</div>
+    <div class="msub">Deletes all season data. Cannot be undone.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-danger" style="flex:1" onclick="doReset()">Yes, Reset</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+function doReset(){S=defaultState();save();closeModal();showTab('roster');}
+
+function showTab(tab){
+  clearInterval(timerInterval);
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  ['roster','setup','game','season'].forEach((t,i)=>{if(t===tab)document.querySelectorAll('.nav-btn')[i].classList.add('active');});
+  if(tab==='roster')renderRoster();
+  else if(tab==='setup')renderSetup();
+  else if(tab==='game')renderGame();
+  else if(tab==='season')renderSeason();
+}
+
+if(!S.setup.date)S.setup.date=todayStr();
+if(!S.game.expandedGames)S.game.expandedGames={};
+renderRoster();
+</script>
+</body>
+</html>
