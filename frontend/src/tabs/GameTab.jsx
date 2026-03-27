@@ -13,6 +13,8 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
   const [timerRunning, setTimerRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [blockStartTime, setBlockStartTime] = useState(null);
+  const [playerMinutes, setPlayerMinutes] = useState({});
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -25,6 +27,11 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
       setPlayers(p);
       const game = activeGame || (g.length > 0 ? g[g.length - 1] : null);
       setSelectedGame(game);
+      const minutes = {};
+      p.forEach((pl) => {
+        minutes[pl.id] = { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 };
+      });
+      setPlayerMinutes(minutes);
     });
   }, [activeSeason]);
 
