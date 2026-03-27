@@ -66,12 +66,43 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
     return () => clearInterval(timerRef.current);
   }, [timerRunning]);
 
-  const advanceBlock = () => {
-    if (currentBlockIdx < 5) {
-      setCurrentBlockIdx((i) => i + 1);
-      setTimerSeconds(BLOCK_DURATION);
-      setTimerRunning(false);
+  const advanceBlock = async () => {
+    if (currentBlockIdx >= 5) return;
+
+    const elapsed = blockStartTime
+      ? Math.min(Math.round((Date.now() - blockStartTime) / 60000 * 10) / 10, 8)
+      : 8;
+
+    const updated = { ...playerMinutes };
+    if (currentBlock) {
+      for (const bp of currentBlock.blockPlayers) {
+        if (!bp.isOnField) continue;
+        const prev = updated[bp.playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 };
+        const next = { ...prev, totalMinutes: prev.totalMinutes + elapsed };
+        if (bp.role === 'offense') next.offenseMinutes = prev.offenseMinutes + elapsed;
+        else if (bp.role === 'defense') next.defenseMinutes = prev.defenseMinutes + elapsed;
+        else if (bp.role === 'goalkeeper') next.gkMinutes = prev.gkMinutes + elapsed;
+        updated[bp.playerId] = next;
+      }
     }
+
+    setPlayerMinutes(updated);
+
+    await api(`/api/games/${selectedGame.id}/minutes`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        players: Object.entries(updated).map(([playerId, mins]) => ({
+          playerId: parseInt(playerId),
+          ...mins,
+        })),
+      }),
+    });
+
+    setBlockStartTime(Date.now());
+    setCurrentBlockIdx((i) => i + 1);
+    setTimerSeconds(BLOCK_DURATION);
+    setTimerRunning(false);
   };
 
   const toggleRole = async (blockPlayerId, currentRole) => {
