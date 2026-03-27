@@ -16,6 +16,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
   const [newGameDate, setNewGameDate] = useState('');
   const [creatingGame, setCreatingGame] = useState(false);
   const [locks, setLocks] = useState([]);
+  const [debtMap, setDebtMap] = useState({});
 
   useEffect(() => {
     if (!activeSeason) return;
@@ -28,6 +29,14 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
       if (activeGame) setSelectedGame(activeGame);
       else if (g.length > 0) setSelectedGame(g[g.length - 1]);
     });
+    api(`/api/seasons/${activeSeason.id}/stats`)
+      .then((r) => r.json())
+      .then((stats) => {
+        const map = {};
+        stats.forEach((s) => { map[s.id] = s.debt; });
+        setDebtMap(map);
+      })
+      .catch(() => {});
   }, [activeSeason]);
 
   useEffect(() => {
@@ -252,6 +261,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
                   <span className="player-name">
                     {p.name}
                     {p.isGKEligible && <span className="badge gk" style={{ marginLeft: 6 }}>GK</span>}
+                    {(() => { const d = debtMap[p.id]; if (!d) return null; const r = Math.round(d); if (r === 0) return null; return <span className={`debt-badge ${r > 0 ? 'debt-pos' : 'debt-neg'}`}>{r > 0 ? `+${r}` : r}</span>; })()}
                   </span>
                   {gp.attending && p.isGKEligible && (
                     <div className="goalie-btns">
@@ -305,6 +315,9 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
         .goalie-btns { display: flex; gap: 4px; }
         .goalie-btn { padding: 0.3rem 0.5rem; font-size: 0.75rem; min-height: unset; background: var(--border); color: var(--text-muted); }
         .goalie-btn.active { background: #fff3cd; color: #856404; font-weight: 700; }
+        .debt-badge { margin-left: 6px; font-size: 0.72rem; font-weight: 700; border-radius: 4px; padding: 1px 4px; }
+        .debt-pos { background: #fff3cd; color: #856404; }
+        .debt-neg { background: #f0f0f0; color: #888; }
       `}</style>
     </div>
   );
