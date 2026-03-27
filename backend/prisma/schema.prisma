@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Season {
+  id        Int      @id @default(autoincrement())
+  name      String
+  year      Int
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  players Player[]
+  games   Game[]
+}
+
+model Player {
+  id           Int      @id @default(autoincrement())
+  seasonId     Int
+  name         String
+  isGKEligible Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  season       Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  gamePlayers  GamePlayer[]
+  blockPlayers BlockPlayer[]
+}
+
+model Game {
+  id         Int      @id @default(autoincrement())
+  seasonId   Int
+  gameNumber Int
+  date       DateTime?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  season      Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  gamePlayers GamePlayer[]
+  blocks      Block[]
+}
+
+model GamePlayer {
+  id         Int     @id @default(autoincrement())
+  gameId     Int
+  playerId   Int
+  attending  Boolean @default(true)
+  goalieHalf Int?    // null = not goalie, 1 = H1, 2 = H2
+
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, playerId])
+}
+
+model Block {
+  id          Int @id @default(autoincrement())
+  gameId      Int
+  half        Int // 1 or 2
+  blockNumber Int // 1, 2, or 3
+
+  game         Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  blockPlayers BlockPlayer[]
+
+  @@unique([gameId, half, blockNumber])
+}
+
+model BlockPlayer {
+  id        Int     @id @default(autoincrement())
+  blockId   Int
+  playerId  Int
+  isOnField Boolean @default(true)
+  role      String? // "offense", "defense", "goalkeeper", or null
+
+  block  Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([blockId, playerId])
+}

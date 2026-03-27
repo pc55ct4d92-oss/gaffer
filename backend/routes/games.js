@@ -1,0 +1,167 @@
+const express = require('express');
+const router = express.Router();
+const prisma = require('../db');
+const generatePlan = require('../lib/generatePlan');
+
+// PATCH /api/games/:id
+router.patch('/:id', async (req, res) => {
+  try {
+    const { gameNumber, date, notes } = req.body;
+    const game = await prisma.game.update({
+      where: { id: parseInt(req.params.id) },
+      data: { gameNumber, date: date ? new Date(date) : undefined, notes },
+    });
+    res.json(game);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/games/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    await prisma.game.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ deleted: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/games/:id/setup
+router.get('/:id/setup', async (req, res) => {
+  try {
+    const gameId = parseInt(req.params.id);
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        gamePlayers: { include: { player: true } },
+      },
+    });
+    if (!game) return res.status(404).json({ error: 'Game not found' });
+    res.json(game);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/games/:id/setup
+// Body: { players: [{ playerId, attending, goalieHalf }] }
+router.post('/:id/setup', async (req, res) => {
+  try {
+    const gameId = parseInt(req.params.id);
+    const { players } = req.body;
+
+    // Upsert each GamePlayer record
+    const results = await Promise.all(
+      players.map(({ playerId, attending, goalieHalf }) =>
+        prisma.gamePlayer.upsert({
+          where: { gameId_playerId: { gameId, playerId } },
+          update: { attending: attending ?? true, goalieHalf: goalieHalf ?? null },
+          create: { gameId, playerId, attending: attending ?? true, goalieHalf: goalieHalf ?? null },
+        })
+      )
+    );
+
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/games/:id/generate-plan
+// Body: { locks: [{ half, blockNumber, playerId, isOnField, role }] }
+router.post('/:id/generate-plan', async (req, res) => {
+  try {
+    const gameId = parseInt(req.params.id);
+    const { locks = [] } = req.body;
+
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        gamePlayers: { include: { player: true } },
+      },
+    });
+    if (!game) return res.status(404).json({ error: 'Game not found' });
+
+    // Load season stats for debt calculation
+    const seasonId = game.seasonId;
+    const allGames = await prisma.game.findMany({
+      where: { seasonId },
+      include: {
+        gamePlayers: true,
+        blocks: { include: { blockPlayers: true } },
+      },
+    });
+
+    const plan = generatePlan(game, allGames, locks);
+
+    // Persist the plan to Block + BlockPlayer tables
+    for (const block of plan) {
+      const dbBlock = await prisma.block.upsert({
+        where: { gameId_half_blockNumber: { gameId, half: block.half, blockNumber: block.blockNumber } },
+        update: {},
+        create: { gameId, half: block.half, blockNumber: block.blockNumber },
+      });
+
+      for (const assignment of block.assignments) {
+        await prisma.blockPlayer.upsert({
+          where: { blockId_playerId: { blockId: dbBlock.id, playerId: assignment.playerId } },
+          update: { isOnField: assignment.isOnField, role: assignment.role },
+          create: {
+            blockId: dbBlock.id,
+            playerId: assignment.playerId,
+            isOnField: assignment.isOnField,
+            role: assignment.role,
+          },
+        });
+      }
+    }
+
+    res.json(plan);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/games/:id/plan
+router.get('/:id/plan', async (req, res) => {
+  try {
+    const gameId = parseInt(req.params.id);
+    const blocks = await prisma.block.findMany({
+      where: { gameId },
+      orderBy: [{ half: 'asc' }, { blockNumber: 'asc' }],
+      include: {
+        blockPlayers: { include: { player: true } },
+      },
+    });
+    res.json(blocks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/games/:id/emergency-sub
+// Body: { blockId, outPlayerId, inPlayerId, role }
+router.post('/:id/emergency-sub', async (req, res) => {
+  try {
+    const { blockId, outPlayerId, inPlayerId, role } = req.body;
+
+    const [outUpdate, inUpdate] = await Promise.all([
+      prisma.blockPlayer.update({
+        where: { blockId_playerId: { blockId, playerId: outPlayerId } },
+        data: { isOnField: false, role: null },
+      }),
+      prisma.blockPlayer.upsert({
+        where: { blockId_playerId: { blockId, playerId: inPlayerId } },
+        update: { isOnField: true, role: role ?? null },
+        create: { blockId, playerId: inPlayerId, isOnField: true, role: role ?? null },
+      }),
+    ]);
+
+    res.json({ out: outUpdate, in: inUpdate });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
