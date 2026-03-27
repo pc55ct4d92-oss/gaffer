@@ -15,6 +15,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
   const [newGameNumber, setNewGameNumber] = useState('');
   const [newGameDate, setNewGameDate] = useState('');
   const [creatingGame, setCreatingGame] = useState(false);
+  const [locks, setLocks] = useState([]);
 
   useEffect(() => {
     if (!activeSeason) return;
@@ -119,6 +120,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
       const updated = await api(`/api/seasons/${activeSeason.id}/games`).then((r) => r.json());
       setGames(updated);
       setSelectedGame(created);
+      setLocks([]);
       setShowNewGame(false);
       setNewGameNumber('');
       setNewGameDate('');
@@ -129,15 +131,31 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
     }
   };
 
+  const toggleLock = (playerId, blockIndex) => {
+    setLocks((prev) => {
+      const exists = prev.some((l) => l.playerId === playerId && l.blockIndex === blockIndex);
+      return exists
+        ? prev.filter((l) => !(l.playerId === playerId && l.blockIndex === blockIndex))
+        : [...prev, { playerId, blockIndex }];
+    });
+  };
+
   const generatePlan = async () => {
     if (!selectedGame || !setup) return;
     setGenerating(true);
     try {
       await saveSetup();
+      const locksForApi = locks.map(({ playerId, blockIndex }) => {
+        const half = blockIndex < 3 ? 1 : 2;
+        const blockNumber = (blockIndex % 3) + 1;
+        const block = plan?.find((b) => b.half === half && b.blockNumber === blockNumber);
+        const bp = block?.blockPlayers.find((bp) => bp.playerId === playerId);
+        return { half, blockNumber, playerId, isOnField: bp?.isOnField ?? true, role: bp?.role ?? null };
+      });
       const res = await api(`/api/games/${selectedGame.id}/generate-plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locks: [] }),
+        body: JSON.stringify({ locks: locksForApi }),
       });
       const planData = await res.json();
       if (res.ok) {
@@ -203,6 +221,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
           onChange={(e) => {
             const g = games.find((g) => g.id === parseInt(e.target.value));
             setSelectedGame(g);
+            setLocks([]);
           }}
         >
           {games.map((g) => (
@@ -265,7 +284,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
       {plan && plan.length > 0 && (
         <div className="card" style={{ marginTop: '1rem' }}>
           <h3 className="subsection">Plan Preview</h3>
-          <PlanGrid plan={plan} players={players} />
+          <PlanGrid plan={plan} players={players} locks={locks} onToggleLock={toggleLock} />
         </div>
       )}
 
@@ -291,11 +310,14 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame }) {
   );
 }
 
-function PlanGrid({ plan, players }) {
+function PlanGrid({ plan, players, locks, onToggleLock }) {
   const playerName = (id) => {
     const p = players.find((pl) => pl.id === id);
     return p ? p.name.split(' ')[0] : `#${id}`;
   };
+
+  const isLocked = (playerId, blockIndex) =>
+    locks.some((l) => l.playerId === playerId && l.blockIndex === blockIndex);
 
   return (
     <div className="plan-grid">
@@ -316,15 +338,18 @@ function PlanGrid({ plan, players }) {
           <div className="plan-cell name">{playerName(pid)}</div>
           {[1, 2].flatMap((half) =>
             [1, 2, 3].map((bn) => {
+              const blockIndex = (half - 1) * 3 + (bn - 1);
               const block = plan.find((b) => b.half === half && b.blockNumber === bn);
               const bp = block?.blockPlayers.find((bp) => bp.playerId === pid);
+              const locked = isLocked(pid, blockIndex);
               return (
-                <div
+                <button
                   key={`${half}-${bn}`}
-                  className={`plan-cell role-${bp?.isOnField ? (bp.role || 'on') : 'off'}`}
+                  className={`plan-cell plan-cell-btn role-${bp?.isOnField ? (bp.role || 'on') : 'off'}${locked ? ' locked' : ''}`}
+                  onClick={() => onToggleLock(pid, blockIndex)}
                 >
-                  {bp?.role === 'goalkeeper' ? 'GK' : bp?.role === 'offense' ? 'O' : bp?.role === 'defense' ? 'D' : bp?.isOnField ? '●' : '—'}
-                </div>
+                  {locked ? '🔒' : bp?.role === 'goalkeeper' ? 'GK' : bp?.role === 'offense' ? 'O' : bp?.role === 'defense' ? 'D' : bp?.isOnField ? '●' : '—'}
+                </button>
               );
             })
           )}
@@ -336,6 +361,8 @@ function PlanGrid({ plan, players }) {
         .plan-header { display: grid; grid-template-columns: 60px repeat(6, 1fr); }
         .plan-row { display: grid; grid-template-columns: 60px repeat(6, 1fr); }
         .plan-cell { padding: 3px 2px; text-align: center; border-bottom: 1px solid var(--border); }
+        .plan-cell-btn { background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0; min-height: unset; padding: 4px 2px; font-size: 0.75rem; cursor: pointer; }
+        .plan-cell-btn.locked { background: #fff3cd; }
         .plan-cell.label { color: var(--text-muted); font-weight: 600; }
         .plan-cell.half-label { color: var(--text-muted); font-weight: 700; }
         .plan-cell.name { text-align: left; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
