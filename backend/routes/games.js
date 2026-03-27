@@ -164,4 +164,27 @@ router.post('/:id/emergency-sub', async (req, res) => {
   }
 });
 
+// PATCH /api/games/:id/minutes
+// Body: { players: [{ playerId, totalMinutes, offenseMinutes, defenseMinutes, gkMinutes }] }
+router.patch('/:id/minutes', async (req, res) => {
+  try {
+    const gameId = parseInt(req.params.id);
+    const { players } = req.body;
+
+    const results = await Promise.all(
+      players.map(({ playerId, totalMinutes, offenseMinutes, defenseMinutes, gkMinutes }) =>
+        prisma.gamePlayer.upsert({
+          where: { gameId_playerId: { gameId, playerId } },
+          update: { totalMinutes, offenseMinutes, defenseMinutes, gkMinutes },
+          create: { gameId, playerId, totalMinutes, offenseMinutes, defenseMinutes, gkMinutes },
+        })
+      )
+    );
+
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
