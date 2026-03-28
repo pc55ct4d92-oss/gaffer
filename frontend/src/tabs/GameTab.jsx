@@ -41,7 +41,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
       });
       setPlayerMinutes(minutes);
     });
-  }, [activeSeason]);
+  }, [activeSeason, activeGame]);
 
   useEffect(() => {
     if (!selectedGame) return;
