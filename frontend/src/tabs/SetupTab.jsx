@@ -198,9 +198,8 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
       });
       const planData = await res.json();
       if (res.ok) {
-        // Reload plan from DB
-        const blocks = await api(`/api/games/${selectedGame.id}/plan`).then((r) => r.json());
-        setPlan(blocks);
+        // generate-plan returns blocks with "assignments"; normalize to "blockPlayers" for BlockCards
+        setPlan(planData.map((block) => ({ ...block, blockPlayers: block.assignments })));
         setActiveGame(selectedGame);
       } else {
         setError(planData.error);
