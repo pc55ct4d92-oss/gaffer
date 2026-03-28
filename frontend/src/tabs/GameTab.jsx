@@ -19,6 +19,8 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
   const [halfTimerRunning, setHalfTimerRunning] = useState(false);
   const [isHalftime, setIsHalftime] = useState(false);
   const [halftimeSeconds, setHalftimeSeconds] = useState(300);
+  const [arrivalSheet, setArrivalSheet] = useState(false);
+  const [leaveSheet, setLeaveSheet] = useState(null); // { playerId, blockPlayerId, role }
   const timerRef = useRef(null);
   const halfTimerRef = useRef(null);
   const halftimeRef = useRef(null);
@@ -185,6 +187,75 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
     }
   };
 
+  const doLateArrival = (playerId) => {
+    setPlan((prev) =>
+      prev.map((block, i) => {
+        if (block.blockPlayers.some((bp) => bp.playerId === playerId)) return block;
+        return {
+          ...block,
+          blockPlayers: [
+            ...block.blockPlayers,
+            { id: null, playerId, isOnField: i === currentBlockIdx, role: null },
+          ],
+        };
+      })
+    );
+    setPlayerMinutes((prev) => ({
+      ...prev,
+      [playerId]: prev[playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 },
+    }));
+    setArrivalSheet(false);
+  };
+
+  const doEarlyLeave = async () => {
+    const { playerId, blockPlayerId, role } = leaveSheet;
+    const elapsed = blockStartTime ? (Date.now() - blockStartTime) / 60000 : 0;
+    const credit = elapsed >= 4 ? 8 : 4;
+
+    const prev = playerMinutes[playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 };
+    const next = { ...prev, totalMinutes: prev.totalMinutes + credit };
+    if (role === 'offense') next.offenseMinutes = prev.offenseMinutes + credit;
+    else if (role === 'defense') next.defenseMinutes = prev.defenseMinutes + credit;
+    else if (role === 'goalkeeper') next.gkMinutes = prev.gkMinutes + credit;
+    const updatedMinutes = { ...playerMinutes, [playerId]: next };
+    setPlayerMinutes(updatedMinutes);
+
+    await api(`/api/games/${selectedGame.id}/minutes`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        players: Object.entries(updatedMinutes).map(([pid, mins]) => ({ playerId: parseInt(pid), ...mins })),
+      }),
+    });
+
+    // PATCH current and future blockplayer DB records
+    await Promise.all(
+      plan.slice(currentBlockIdx).flatMap((block) => {
+        const bp = block.blockPlayers.find((bp) => bp.playerId === playerId);
+        if (!bp || !bp.id || !bp.isOnField) return [];
+        return [api(`/api/blockplayers/${bp.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isOnField: false, role: null }),
+        })];
+      })
+    );
+
+    setPlan((prev) =>
+      prev.map((block, i) => {
+        if (i < currentBlockIdx) return block;
+        return {
+          ...block,
+          blockPlayers: block.blockPlayers.map((bp) =>
+            bp.playerId === playerId ? { ...bp, isOnField: false, role: null } : bp
+          ),
+        };
+      })
+    );
+
+    setLeaveSheet(null);
+  };
+
   const formatTime = (s) => {
     const m = Math.floor(s / 60).toString().padStart(2, '0');
     const sec = (s % 60).toString().padStart(2, '0');
@@ -197,6 +268,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
   const currentBlock = plan ? plan[currentBlockIdx] : null;
   const onField = currentBlock?.blockPlayers.filter((bp) => bp.isOnField) || [];
   const sitting = currentBlock?.blockPlayers.filter((bp) => !bp.isOnField) || [];
+  const absentPlayers = players.filter((p) => !currentBlock?.blockPlayers.some((bp) => bp.playerId === p.id));
 
   const playerName = (id) => {
     const p = players.find((pl) => pl.id === id);
@@ -276,19 +348,30 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
             <div className="player-grid">
               {onField.map((bp) => (
                 <button
-                  key={bp.id}
+                  key={bp.id ?? bp.playerId}
                   className={`field-btn role-${bp.role || 'none'}`}
                   onClick={() => bp.role !== 'goalkeeper' && toggleRole(bp.id, bp.role)}
                 >
                   <span className="field-name">{playerName(bp.playerId)}</span>
                   <span className="field-role">{bp.role || '—'}</span>
+                  {bp.role !== 'goalkeeper' && (
+                    <span
+                      className="field-leave"
+                      onClick={(e) => { e.stopPropagation(); setLeaveSheet({ playerId: bp.playerId, blockPlayerId: bp.id, role: bp.role }); }}
+                    >×</span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="card">
-            <h3 className="subsection">Sitting ({sitting.length})</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <h3 className="subsection" style={{ margin: 0 }}>Sitting ({sitting.length})</h3>
+              {absentPlayers.length > 0 && (
+                <button className="add-arrival-btn" onClick={() => setArrivalSheet(true)}>+ Add</button>
+              )}
+            </div>
             <div className="sitting-list">
               {sitting.map((bp) => (
                 <div key={bp.id} className="sitting-player">
@@ -332,6 +415,44 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
               </div>
             );
           })()}
+          {arrivalSheet && (
+            <>
+              <div className="sheet-backdrop" onClick={() => setArrivalSheet(false)} />
+              <div className="sheet" onClick={(e) => e.stopPropagation()}>
+                <div className="sheet-title">Late Arrival</div>
+                <div className="sheet-sub">Select a player who just arrived.</div>
+                <div className="sheet-list">
+                  {absentPlayers.map((p) => (
+                    <button key={p.id} className="sheet-row" onClick={() => doLateArrival(p.id)}>
+                      <span style={{ fontWeight: 600 }}>{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <button className="sheet-cancel" onClick={() => setArrivalSheet(false)}>Cancel</button>
+              </div>
+            </>
+          )}
+
+          {leaveSheet && (() => {
+            const leavingPlayer = players.find((p) => p.id === leaveSheet.playerId);
+            const elapsed = blockStartTime ? (Date.now() - blockStartTime) / 60000 : 0;
+            const credit = elapsed >= 4 ? 8 : 4;
+            return (
+              <>
+                <div className="sheet-backdrop" onClick={() => setLeaveSheet(null)} />
+                <div className="sheet" onClick={(e) => e.stopPropagation()}>
+                  <div className="sheet-title">Early Leave</div>
+                  <div className="sheet-sub">
+                    {leavingPlayer?.name} is leaving early. They'll receive {credit} min credit ({elapsed >= 4 ? 'full' : 'half'} block).
+                  </div>
+                  <button className="primary" style={{ width: '100%', marginBottom: '0.5rem' }} onClick={doEarlyLeave}>
+                    Confirm Leave
+                  </button>
+                  <button className="sheet-cancel" onClick={() => setLeaveSheet(null)}>Cancel</button>
+                </div>
+              </>
+            );
+          })()}
         </>
       )}
 
@@ -359,6 +480,16 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
         .field-role { font-size: 0.7rem; margin-top: 2px; text-transform: uppercase; opacity: 0.8; }
         .sitting-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .sitting-player { background: #f8d7da; color: #721c24; padding: 0.4rem 0.75rem; border-radius: var(--radius); font-size: 0.9rem; }
+        .field-leave { position: absolute; top: 4px; right: 4px; font-size: 0.8rem; opacity: 0.6; line-height: 1; padding: 2px 4px; }
+        .field-btn { position: relative; }
+        .add-arrival-btn { font-size: 0.75rem; color: var(--green); background: none; border: none; padding: 0; min-height: unset; font-weight: 600; cursor: pointer; }
+        .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; }
+        .sheet { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 16px 16px 0 0; padding: 1.25rem 1rem 2rem; z-index: 101; box-shadow: 0 -4px 24px rgba(0,0,0,0.15); }
+        .sheet-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem; }
+        .sheet-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+        .sheet-list { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem; }
+        .sheet-row { display: flex; align-items: center; padding: 0.75rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: white; min-height: 48px; cursor: pointer; text-align: left; }
+        .sheet-cancel { width: 100%; padding: 0.75rem; background: var(--border); color: var(--text); border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; min-height: 48px; cursor: pointer; }
         .subs-list { display: flex; flex-direction: column; gap: 0.25rem; }
         .sub-row { font-size: 0.95rem; padding: 0.2rem 0; }
         .sub-off { color: #721c24; }
