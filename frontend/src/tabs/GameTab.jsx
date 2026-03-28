@@ -209,57 +209,21 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
 
       {error && <div className="error">{error}</div>}
 
-      <div className="card">
-        <label className="field-label">Game</label>
-        <select
-          className="select"
-          value={selectedGame?.id || ''}
-          onChange={(e) => {
-            const g = games.find((g) => g.id === parseInt(e.target.value));
-            setSelectedGame(g);
-            setCurrentBlockIdx(0);
-            setTimerSeconds(BLOCK_DURATION);
-            setTimerRunning(false);
-            setBlockStartTime(null);
-            setHalfTimerSeconds(0);
-            setHalfTimerRunning(false);
-            setIsHalftime(false);
-            setHalftimeSeconds(300);
-          }}
-        >
-          {games.map((g) => (
-            <option key={g.id} value={g.id}>
-              Game {g.gameNumber}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {!plan && (
         <div className="card">
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            No plan generated yet. Go to Setup tab to generate a plan.
+            No game in progress. Go to Game Setup to start a game.
           </p>
         </div>
       )}
 
       {plan && currentBlock && (
         <>
-          {/* Block indicator */}
-          <div className="block-nav">
-            {plan.map((b, i) => (
-              <button
-                key={i}
-                className={`block-dot ${i === currentBlockIdx ? 'active' : i < currentBlockIdx ? 'done' : ''}`}
-                onClick={() => { setCurrentBlockIdx(i); setTimerSeconds(BLOCK_DURATION); setTimerRunning(false); }}
-              >
-                H{b.half}B{b.blockNumber}
-              </button>
-            ))}
-          </div>
-
           {/* Timer */}
           <div className="timer-card card">
+            {currentBlock && !isHalftime && (
+              <div className="block-label">H{currentBlock.half} · Block {currentBlock.blockNumber}</div>
+            )}
             {isHalftime ? (
               <>
                 <div className="halftime-heading">Halftime</div>
@@ -341,11 +305,8 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
         .subsection { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; }
         .field-label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
         .select { width: 100%; font-size: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: white; }
-        .block-nav { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-        .block-dot { padding: 0.4rem 0.75rem; font-size: 0.75rem; min-height: 36px; background: var(--border); color: var(--text-muted); }
-        .block-dot.active { background: var(--green); color: white; font-weight: 700; }
-        .block-dot.done { background: #d4edda; color: #155724; }
         .timer-card { text-align: center; }
+        .block-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; }
         .timer-display { font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 0.25rem; }
         .timer-display.expired { color: #dc3545; }
         .half-timer { font-size: 0.85rem; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-bottom: 1rem; }
