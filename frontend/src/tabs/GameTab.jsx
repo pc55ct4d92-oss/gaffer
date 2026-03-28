@@ -15,7 +15,10 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
   const [error, setError] = useState(null);
   const [blockStartTime, setBlockStartTime] = useState(null);
   const [playerMinutes, setPlayerMinutes] = useState({});
+  const [halfTimerSeconds, setHalfTimerSeconds] = useState(0);
+  const [halfTimerRunning, setHalfTimerRunning] = useState(false);
   const timerRef = useRef(null);
+  const halfTimerRef = useRef(null);
 
   useEffect(() => {
     if (!activeSeason) return;
@@ -45,9 +48,36 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    api(`/api/games/${selectedGame.id}/setup`)
+      .then((r) => r.json())
+      .then((data) => {
+        const minutes = {};
+        data.gamePlayers.forEach((gp) => {
+          minutes[gp.playerId] = {
+            totalMinutes: gp.totalMinutes || 0,
+            offenseMinutes: gp.offenseMinutes || 0,
+            defenseMinutes: gp.defenseMinutes || 0,
+            gkMinutes: gp.gkMinutes || 0,
+          };
+        });
+        setPlayerMinutes(minutes);
+      })
+      .catch(() => {});
   }, [selectedGame]);
 
-  // Timer logic
+  // Half timer — counts up, never pauses
+  useEffect(() => {
+    if (halfTimerRunning) {
+      halfTimerRef.current = setInterval(() => {
+        setHalfTimerSeconds((s) => s + 1);
+      }, 1000);
+    } else {
+      clearInterval(halfTimerRef.current);
+    }
+    return () => clearInterval(halfTimerRef.current);
+  }, [halfTimerRunning]);
+
+  // Block timer logic
   useEffect(() => {
     if (timerRunning) {
       timerRef.current = setInterval(() => {
@@ -100,6 +130,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
     });
 
     setBlockStartTime(Date.now());
+    if (currentBlockIdx === 2) setHalfTimerSeconds(0); // halftime reset
     setCurrentBlockIdx((i) => i + 1);
     setTimerSeconds(BLOCK_DURATION);
     setTimerRunning(false);
@@ -163,6 +194,9 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
             setCurrentBlockIdx(0);
             setTimerSeconds(BLOCK_DURATION);
             setTimerRunning(false);
+            setBlockStartTime(null);
+            setHalfTimerSeconds(0);
+            setHalfTimerRunning(false);
           }}
         >
           {games.map((g) => (
@@ -198,13 +232,22 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
 
           {/* Timer */}
           <div className="timer-card card">
-            <div className={`timer-display ${timerSeconds === 0 ? 'expired' : ''}`}>
+            <div className={`timer-display ${timerSeconds <= 90 ? 'expired' : ''}`}>
               {formatTime(timerSeconds)}
             </div>
+            {halfTimerRunning && (
+              <div className="half-timer">Half: {formatTime(halfTimerSeconds)}</div>
+            )}
             <div className="timer-btns">
               <button
                 className={timerRunning ? 'secondary' : 'primary'}
-                onClick={() => setTimerRunning((r) => !r)}
+                onClick={() => {
+                  if (!timerRunning && blockStartTime === null) {
+                    setBlockStartTime(Date.now());
+                    setHalfTimerRunning(true);
+                  }
+                  setTimerRunning((r) => !r);
+                }}
               >
                 {timerRunning ? 'Pause' : timerSeconds === BLOCK_DURATION ? 'Start' : 'Resume'}
               </button>
@@ -257,8 +300,9 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
         .block-dot.active { background: var(--green); color: white; font-weight: 700; }
         .block-dot.done { background: #d4edda; color: #155724; }
         .timer-card { text-align: center; }
-        .timer-display { font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 1rem; }
+        .timer-display { font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 0.25rem; }
         .timer-display.expired { color: #dc3545; }
+        .half-timer { font-size: 0.85rem; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-bottom: 1rem; }
         .timer-btns { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
         .timer-btns button { flex: 1; min-width: 80px; }
         .player-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
