@@ -272,12 +272,23 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
 
   const playerName = (id) => {
     const p = players.find((pl) => pl.id === id);
-    return p ? p.name : `#${id}`;
+    if (!p) return `#${id}`;
+    const firstName = p.name.split(' ')[0];
+    const hasDuplicate = players.some((pl) => pl.id !== p.id && pl.name.split(' ')[0] === firstName);
+    if (hasDuplicate) {
+      const lastName = p.name.split(' ')[1];
+      return lastName ? `${firstName} ${lastName[0]}` : firstName;
+    }
+    return firstName;
   };
 
   return (
     <div>
-      <h2 className="section-title">Game</h2>
+      <h2 className="section-title">
+        {selectedGame
+          ? `Game ${selectedGame.gameNumber}${selectedGame.date ? ` · ${new Date(selectedGame.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`
+          : 'Game'}
+      </h2>
 
       {error && <div className="error">{error}</div>}
 
@@ -395,22 +406,17 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
               <div className="card">
                 <h3 className="subsection">Next Subs</h3>
                 <div className="subs-list">
-                  {comingOff.map((bp) => {
-                    const incoming = comingOn.find((n) => {
-                      const nNext = nextBlock.blockPlayers.find((x) => x.playerId === n.playerId);
-                      return nNext?.isOnField;
-                    });
+                  {Array.from({ length: Math.max(comingOff.length, comingOn.length) }).map((_, i) => {
+                    const off = comingOff[i];
+                    const on = comingOn[i];
                     return (
-                      <div key={bp.playerId} className="sub-row">
-                        <span className="sub-off">↓ {playerName(bp.playerId)}</span>
+                      <div key={i} className="sub-row">
+                        {off && <span className="sub-off">↓ {playerName(off.playerId)}</span>}
+                        {off && on && <span className="sub-arrow"> → </span>}
+                        {on && <span className="sub-on">↑ {playerName(on.playerId)}</span>}
                       </div>
                     );
                   })}
-                  {comingOn.map((bp) => (
-                    <div key={bp.playerId} className="sub-row">
-                      <span className="sub-on">↑ {playerName(bp.playerId)}</span>
-                    </div>
-                  ))}
                 </div>
               </div>
             );
@@ -471,7 +477,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
         .timer-btns { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
         .timer-btns button { flex: 1; min-width: 80px; }
         .player-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
-        .field-btn { display: flex; flex-direction: column; align-items: center; padding: 0.75rem; min-height: 64px; border-radius: var(--radius); }
+        .field-btn { display: flex; flex-direction: column; align-items: center; padding: 0.4rem 0.5rem; min-height: 48px; border-radius: var(--radius); }
         .field-btn.role-offense { background: #cce5ff; color: #004085; }
         .field-btn.role-defense { background: #d4edda; color: #155724; }
         .field-btn.role-goalkeeper { background: #fff3cd; color: #856404; }
@@ -494,6 +500,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
         .sub-row { font-size: 0.95rem; padding: 0.2rem 0; }
         .sub-off { color: #721c24; }
         .sub-on { color: #155724; }
+        .sub-arrow { color: var(--text-muted); }
       `}</style>
     </div>
   );
