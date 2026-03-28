@@ -36,8 +36,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     ]).then(([g, p]) => {
       setGames(g);
       setPlayers(p);
-      const game = activeGame || (g.length > 0 ? g[g.length - 1] : null);
-      setSelectedGame(game);
+      setSelectedGame(activeGame || null);
     });
   }, [activeSeason, activeGame]);
 
