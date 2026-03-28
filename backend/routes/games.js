@@ -69,11 +69,20 @@ router.post('/:id/setup', async (req, res) => {
 });
 
 // POST /api/games/:id/generate-plan
-// Body: { locks: [{ half, blockNumber, playerId, isOnField, role }] }
+// Body: { locks: [{ half, blockNumber, playerId, isOnField, role }], fromBlockIndex?: number, newPlayerId?: number }
 router.post('/:id/generate-plan', async (req, res) => {
   try {
     const gameId = parseInt(req.params.id);
-    const { locks = [] } = req.body;
+    const { locks = [], fromBlockIndex, newPlayerId } = req.body;
+
+    // Upsert late arrival before loading the game
+    if (newPlayerId) {
+      await prisma.gamePlayer.upsert({
+        where: { gameId_playerId: { gameId, playerId: newPlayerId } },
+        update: { attending: true },
+        create: { gameId, playerId: newPlayerId, attending: true },
+      });
+    }
 
     const game = await prisma.game.findUnique({
       where: { id: gameId },
@@ -93,7 +102,43 @@ router.post('/:id/generate-plan', async (req, res) => {
       },
     });
 
-    const plan = generatePlan(game, allGames, locks);
+    // If fromBlockIndex > 0, freeze all earlier blocks by converting their DB records into locks
+    let mergedLocks = locks;
+    if (fromBlockIndex > 0) {
+      const BLOCKS = [
+        { half: 1, blockNumber: 1 },
+        { half: 1, blockNumber: 2 },
+        { half: 1, blockNumber: 3 },
+        { half: 2, blockNumber: 1 },
+        { half: 2, blockNumber: 2 },
+        { half: 2, blockNumber: 3 },
+      ];
+      const frozenBlocks = BLOCKS.slice(0, fromBlockIndex);
+      const existingBlocks = await prisma.block.findMany({
+        where: { gameId, half: { in: frozenBlocks.map((b) => b.half) } },
+        include: { blockPlayers: true },
+      });
+
+      const existingLocks = [];
+      for (const block of existingBlocks) {
+        const blockDef = BLOCKS.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
+        if (!blockDef) continue;
+        const bi = BLOCKS.indexOf(blockDef);
+        if (bi >= fromBlockIndex) continue;
+        for (const bp of block.blockPlayers) {
+          existingLocks.push({ half: block.half, blockNumber: block.blockNumber, playerId: bp.playerId, isOnField: bp.isOnField, role: bp.role });
+        }
+      }
+
+      // Existing block locks take precedence for earlier blocks; user locks apply for later blocks
+      const userLocksForLaterBlocks = locks.filter((l) => {
+        const bi = BLOCKS.findIndex((b) => b.half === l.half && b.blockNumber === l.blockNumber);
+        return bi >= fromBlockIndex;
+      });
+      mergedLocks = [...existingLocks, ...userLocksForLaterBlocks];
+    }
+
+    const plan = generatePlan(game, allGames, mergedLocks);
 
     // Persist the plan to Block + BlockPlayer tables
     for (const block of plan) {
