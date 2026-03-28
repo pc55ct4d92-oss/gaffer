@@ -283,6 +283,18 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     return `${m}:${sec}`;
   };
 
+  const playerName = (id) => {
+    const p = players.find((pl) => pl.id === id);
+    if (!p) return `#${id}`;
+    const firstName = p.name.split(' ')[0];
+    const hasDuplicate = players.some((pl) => pl.id !== p.id && pl.name.split(' ')[0] === firstName);
+    if (hasDuplicate) {
+      const lastName = p.name.split(' ')[1];
+      return lastName ? `${firstName} ${lastName[0]}` : firstName;
+    }
+    return firstName;
+  };
+
   if (!activeSeason) return <div className="loading">No active season</div>;
   if (loading) return <div className="loading">Loading plan…</div>;
 
@@ -340,18 +352,6 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   const onField = currentBlock?.blockPlayers.filter((bp) => bp.isOnField) || [];
   const sitting = currentBlock?.blockPlayers.filter((bp) => !bp.isOnField) || [];
   const absentPlayers = players.filter((p) => !currentBlock?.blockPlayers.some((bp) => bp.playerId === p.id));
-
-  const playerName = (id) => {
-    const p = players.find((pl) => pl.id === id);
-    if (!p) return `#${id}`;
-    const firstName = p.name.split(' ')[0];
-    const hasDuplicate = players.some((pl) => pl.id !== p.id && pl.name.split(' ')[0] === firstName);
-    if (hasDuplicate) {
-      const lastName = p.name.split(' ')[1];
-      return lastName ? `${firstName} ${lastName[0]}` : firstName;
-    }
-    return firstName;
-  };
 
   return (
     <div>
