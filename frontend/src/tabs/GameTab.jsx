@@ -187,19 +187,32 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame }) {
     }
   };
 
-  const doLateArrival = (playerId) => {
-    setPlan((prev) =>
-      prev.map((block, i) => {
-        if (block.blockPlayers.some((bp) => bp.playerId === playerId)) return block;
-        return {
-          ...block,
-          blockPlayers: [
-            ...block.blockPlayers,
-            { id: null, playerId, isOnField: i === currentBlockIdx, role: null },
-          ],
+  const doLateArrival = async (playerId) => {
+    const res = await api(`/api/games/${selectedGame.id}/generate-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
+    });
+    const newPlan = await res.json();
+
+    setPlan((prev) => {
+      const updated = [...prev];
+      // Replace blocks from currentBlockIdx + 1 forward with regenerated plan
+      for (let i = currentBlockIdx + 1; i < updated.length; i++) {
+        const block = newPlan.find((b) => b.half === updated[i].half && b.blockNumber === updated[i].blockNumber);
+        if (block) updated[i] = { ...block, blockPlayers: block.assignments };
+      }
+      // Add arriving player to current block as sitting if not already present
+      const cur = updated[currentBlockIdx];
+      if (!cur.blockPlayers.some((bp) => bp.playerId === playerId)) {
+        updated[currentBlockIdx] = {
+          ...cur,
+          blockPlayers: [...cur.blockPlayers, { id: null, playerId, isOnField: false, role: null }],
         };
-      })
-    );
+      }
+      return updated;
+    });
+
     setPlayerMinutes((prev) => ({
       ...prev,
       [playerId]: prev[playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 },
