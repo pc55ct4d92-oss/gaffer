@@ -27,6 +27,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   const [goals, setGoals] = useState([]);
   const [scorerSheet, setScorerSheet] = useState(false);
   const [subSheet, setSubSheet] = useState(null); // { playerId } — sitting player selected for emergency sub
+  const [leaveSelectSheet, setLeaveSelectSheet] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
   const timerRef = useRef(null);
   const halfTimerRef = useRef(null);
@@ -364,35 +365,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   };
 
   const doEarlyLeave = async () => {
-    const { playerId, role } = leaveSheet;
-    const elapsed = blockStartTime ? (Date.now() - blockStartTime) / 60000 : 0;
-    const credit = elapsed >= 4 ? 8 : 4;
-
-    const prev = playerMinutes[playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 };
-    const next = { ...prev, totalMinutes: prev.totalMinutes + credit };
-    if (role === 'offense') next.offenseMinutes = prev.offenseMinutes + credit;
-    else if (role === 'defense') next.defenseMinutes = prev.defenseMinutes + credit;
-    else if (role === 'goalkeeper') next.gkMinutes = prev.gkMinutes + credit;
-    const updatedMinutes = { ...playerMinutes, [playerId]: next };
-    setPlayerMinutes(updatedMinutes);
-
-    await api(`/api/games/${selectedGame.id}/minutes`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        players: Object.entries(updatedMinutes).map(([pid, mins]) => ({ playerId: parseInt(pid), ...mins })),
-      }),
-    });
-
-    // PATCH current block's blockplayer to off-field
-    const currentBlockBp = currentBlock?.blockPlayers.find((bp) => bp.playerId === playerId);
-    if (currentBlockBp?.id && currentBlockBp.isOnField) {
-      await api(`/api/blockplayers/${currentBlockBp.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isOnField: false, role: null }),
-      });
-    }
+    const { playerId } = leaveSheet;
 
     // Regenerate future blocks excluding the leaving player
     const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
@@ -402,15 +375,14 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     });
     const newPlan = await regenRes.json();
 
+    // Remove player entirely from current block and replace future blocks
     setPlan((prev) =>
       prev.map((block, i) => {
         if (i < currentBlockIdx) return block;
         if (i === currentBlockIdx) {
           return {
             ...block,
-            blockPlayers: block.blockPlayers.map((bp) =>
-              bp.playerId === playerId ? { ...bp, isOnField: false, role: null } : bp
-            ),
+            blockPlayers: block.blockPlayers.filter((bp) => bp.playerId !== playerId),
           };
         }
         const regenerated = newPlan.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
@@ -634,7 +606,6 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                 >
                   <span className="field-name">{playerName(bp.playerId)}</span>
                   <span className="field-role">{bp.role || '—'}</span>
-                  <span className="field-leave" onClick={(e) => { e.stopPropagation(); setLeaveSheet({ playerId: bp.playerId, role: bp.role }); }}>✕</span>
                 </button>
               ))}
             </div>
@@ -643,7 +614,6 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                 <div className="field-btn role-goalkeeper" style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', gap: '0.5rem' }}>
                   <span className="field-name">{playerName(bp.playerId)}</span>
                   <span className="field-role">GOALKEEPER</span>
-                  <span className="field-leave" onClick={() => setLeaveSheet({ playerId: bp.playerId, role: bp.role })}>✕</span>
                 </div>
               </div>
             ))}
@@ -652,9 +622,14 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
           <div className="card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <h3 className="subsection" style={{ margin: 0 }}>Sitting ({sitting.length})</h3>
-              {absentPlayers.length > 0 && (
-                <button className="add-arrival-btn" onClick={() => setArrivalSheet(true)}>+ Add</button>
-              )}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {sitting.length > 0 && (
+                  <button className="add-arrival-btn" onClick={() => setLeaveSelectSheet(true)}>Leave</button>
+                )}
+                {absentPlayers.length > 0 && (
+                  <button className="add-arrival-btn" onClick={() => setArrivalSheet(true)}>+ Add</button>
+                )}
+              </div>
             </div>
             <div className="sitting-list">
               {sitting.map((bp) => (
@@ -797,17 +772,33 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
             </>
           )}
 
+          {leaveSelectSheet && (
+            <>
+              <div className="sheet-backdrop" onClick={() => setLeaveSelectSheet(false)} />
+              <div className="sheet" onClick={(e) => e.stopPropagation()}>
+                <div className="sheet-title">Early Leave</div>
+                <div className="sheet-sub">Who is leaving?</div>
+                <div className="sheet-list">
+                  {sitting.map((bp) => (
+                    <button key={bp.playerId} className="sheet-row" onClick={() => { setLeaveSelectSheet(false); setLeaveSheet({ playerId: bp.playerId }); }}>
+                      <span style={{ fontWeight: 600 }}>{playerName(bp.playerId)}</span>
+                    </button>
+                  ))}
+                </div>
+                <button className="sheet-cancel" onClick={() => setLeaveSelectSheet(false)}>Cancel</button>
+              </div>
+            </>
+          )}
+
           {leaveSheet && (() => {
             const leavingPlayer = players.find((p) => p.id === leaveSheet.playerId);
-            const elapsed = blockStartTime ? (Date.now() - blockStartTime) / 60000 : 0;
-            const credit = elapsed >= 4 ? 8 : 4;
             return (
               <>
                 <div className="sheet-backdrop" onClick={() => setLeaveSheet(null)} />
                 <div className="sheet" onClick={(e) => e.stopPropagation()}>
                   <div className="sheet-title">Early Leave</div>
                   <div className="sheet-sub">
-                    {leavingPlayer?.name} is leaving early. They'll receive {credit} min credit ({elapsed >= 4 ? 'full' : 'half'} block).
+                    Remove {leavingPlayer?.name} from the rest of the game?
                   </div>
                   <button className="primary" style={{ width: '100%', marginBottom: '0.5rem' }} onClick={doEarlyLeave}>
                     Confirm Leave
