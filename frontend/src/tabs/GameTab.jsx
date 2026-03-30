@@ -42,7 +42,15 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   }, [activeSeason, activeGame]);
 
   useEffect(() => {
-    if (!selectedGame) return;
+    if (!selectedGame) {
+      setPlan(null);
+      setIsGameOver(false);
+      setCurrentBlockIdx(0);
+      setTimerSeconds(BLOCK_DURATION);
+      setTimerRunning(false);
+      setIsHalftime(false);
+      return;
+    }
     setLoading(true);
     api(`/api/games/${selectedGame.id}/plan`)
       .then((r) => r.json())
@@ -181,6 +189,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       setTimerRunning(false);
       setHalfTimerRunning(false);
       setIsGameOver(true);
+      clearSession();
       return;
     }
 
