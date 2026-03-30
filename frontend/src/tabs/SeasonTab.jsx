@@ -100,17 +100,17 @@ export default function SeasonTab({ activeSeason, activeGame, setActiveGame }) {
         .stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .stats-table th, .stats-table td { padding: 0.4rem 0.5rem; text-align: right; border-bottom: 1px solid var(--border); }
         .stats-table th:first-child, .stats-table td:first-child { text-align: left; }
-        .gk-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; background: #cfe2ff; color: #084298; border-radius: 3px; padding: 0 3px; margin-left: 4px; vertical-align: middle; }
-        .debt-pos { color: #dc3545; font-weight: 600; }
-        .debt-neg { color: #198754; font-weight: 600; }
+        .gk-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; background: #3d3010; color: #f0c870; border-radius: 3px; padding: 0 3px; margin-left: 4px; vertical-align: middle; }
+        .debt-pos { color: #e07070; font-weight: 600; }
+        .debt-neg { color: #90d490; font-weight: 600; }
         .game-card { padding: 0; overflow: hidden; }
         .game-header { display: flex; align-items: center; gap: 0.75rem; width: 100%; background: none; text-align: left; padding: 0.875rem; min-height: 48px; border-radius: 0; }
         .game-num { font-weight: 600; }
         .game-date { color: var(--text-muted); font-size: 0.85rem; flex: 1; }
         .expand-icon { font-size: 0.7rem; color: var(--text-muted); }
         .game-score { font-size: 0.85rem; font-weight: 600; color: var(--text); }
-        .result-w { color: #198754; }
-        .result-l { color: #dc3545; }
+        .result-w { color: #90d490; }
+        .result-l { color: #c07070; }
         .result-d { color: var(--text-muted); }
         .muted { color: var(--text-muted); font-size: 0.85rem; }
       `}</style>
@@ -219,9 +219,9 @@ function GameDetail({ game }) {
         .grid-name-col { width: 52px; font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; }
         .grid-block-header { flex: 1; text-align: center; font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
         .grid-cell { flex: 1; height: 18px; border-radius: 3px; }
-        .grid-cell.on { background: #d4edda; }
-        .grid-cell.off { background: #f8d7da; }
-        .grid-cell.gk { background: #cfe2ff; }
+        .grid-cell.on { background: #1a3520; }
+        .grid-cell.off { background: #3d1818; }
+        .grid-cell.gk { background: #3d3010; }
         .grid-cell.empty { background: var(--border); }
       `}</style>
     </div>

@@ -392,32 +392,32 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
         .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
         .subsection { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; }
         .field-label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        .select { width: 100%; font-size: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: white; }
-        .new-game-toggle { font-size: 0.75rem; color: var(--green); background: none; border: none; padding: 0; min-height: unset; cursor: pointer; font-weight: 600; }
+        .select { width: 100%; font-size: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+        .new-game-toggle { font-size: 0.75rem; color: #5cb85c; background: none; border: none; padding: 0; min-height: unset; cursor: pointer; font-weight: 600; }
         .new-game-form { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
-        .new-game-input { font-size: 0.9rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: white; flex: 1; min-width: 80px; }
+        .new-game-input { font-size: 0.9rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); flex: 1; min-width: 80px; }
         .player-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
         .player-row:last-child { border-bottom: none; }
         .player-name { flex: 1; font-size: 0.95rem; }
         .attend-btn { width: 40px; height: 40px; border-radius: 50%; font-size: 1rem; display: flex; align-items: center; justify-content: center; min-height: unset; padding: 0; }
-        .attend-btn.attending { background: #d4edda; color: #155724; }
-        .attend-btn.absent { background: #f8d7da; color: #721c24; }
+        .attend-btn.attending { background: #1a3520; color: #90d490; }
+        .attend-btn.absent { background: #3d1818; color: #c07070; }
         .goalie-btns { display: flex; gap: 4px; }
         .goalie-btn { padding: 0.3rem 0.5rem; font-size: 0.75rem; min-height: unset; background: var(--border); color: var(--text-muted); }
-        .goalie-btn.active { background: #fff3cd; color: #856404; font-weight: 700; }
+        .goalie-btn.active { background: #3d3010; color: #f0c870; font-weight: 700; }
         .debt-badge { margin-left: 6px; font-size: 0.72rem; font-weight: 700; border-radius: 4px; padding: 1px 4px; }
-        .debt-pos { background: #fff3cd; color: #856404; }
-        .debt-neg { background: #f0f0f0; color: #888; }
+        .debt-pos { background: #3d3010; color: #f0c870; }
+        .debt-neg { background: #242422; color: #888780; }
         .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; }
-        .sheet { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 16px 16px 0 0; padding: 1.25rem 1rem 2rem; z-index: 101; box-shadow: 0 -4px 24px rgba(0,0,0,0.15); }
+        .sheet { position: fixed; bottom: 0; left: 0; right: 0; background: #1c1c1a; border-radius: 16px 16px 0 0; padding: 1.25rem 1rem 2rem; z-index: 101; box-shadow: 0 -4px 24px rgba(0,0,0,0.5); }
         .sheet-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem; }
         .sheet-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
         .sheet-list { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem; }
-        .sheet-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: white; min-height: 48px; cursor: pointer; text-align: left; }
+        .sheet-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: #242422; min-height: 48px; cursor: pointer; text-align: left; }
         .sheet-out { flex: 1; font-size: 0.95rem; font-weight: 600; }
         .sheet-arrow { color: var(--text-muted); font-size: 0.9rem; }
-        .sheet-in { flex: 1; font-size: 0.95rem; font-weight: 600; color: #155724; text-align: right; }
-        .sheet-cancel { width: 100%; padding: 0.75rem; background: var(--border); color: var(--text); border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; min-height: 48px; cursor: pointer; }
+        .sheet-in { flex: 1; font-size: 0.95rem; font-weight: 600; color: #90d490; text-align: right; }
+        .sheet-cancel { width: 100%; padding: 0.75rem; background: #2a2a28; color: #a8a79f; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; min-height: 48px; cursor: pointer; }
       `}</style>
     </div>
   );
@@ -492,11 +492,11 @@ function BlockCards({ plan, players, locks, onSitPlayerTap }) {
         .bc-wrap { display: flex; flex-direction: column; gap: 1rem; }
         .bc-half-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; padding-left: 0.25rem; }
         .bc-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-        .bc-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem; display: flex; flex-direction: column; gap: 2px; }
+        .bc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem; display: flex; flex-direction: column; gap: 2px; }
         .bc-time { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
-        .bc-gk { font-size: 0.8rem; font-weight: 700; color: #856404; background: #fff3cd; border-radius: 4px; padding: 3px 5px; }
-        .bc-field { font-size: 0.8rem; color: #155724; padding: 2px 0; }
-        .bc-sitting { font-size: 0.8rem; color: #721c24; background: none; border: none; border-radius: 4px; padding: 4px 2px; min-height: 36px; width: 100%; text-align: left; cursor: pointer; display: block; }
+        .bc-gk { font-size: 0.8rem; font-weight: 700; color: #f0c870; background: #3d3010; border-radius: 4px; padding: 3px 5px; }
+        .bc-field { font-size: 0.8rem; color: #90d490; padding: 2px 0; }
+        .bc-sitting { font-size: 0.8rem; color: #c07070; background: #3d1818; border: 1px dashed #5a2020; border-radius: 4px; padding: 4px 2px; min-height: 36px; width: 100%; text-align: left; cursor: pointer; display: block; }
         .bc-lock { display: inline-block; font-size: 0.6rem; font-weight: 800; color: #fff; background: #6c757d; border-radius: 3px; padding: 0 3px; margin-right: 3px; line-height: 1.4; vertical-align: middle; }
       `}</style>
     </div>

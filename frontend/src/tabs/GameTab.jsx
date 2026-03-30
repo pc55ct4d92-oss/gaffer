@@ -813,11 +813,11 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
         .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
         .subsection { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; }
         .field-label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        .select { width: 100%; font-size: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: white; }
+        .select { width: 100%; font-size: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); }
         .timer-card { text-align: center; }
         .block-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; }
-        .timer-display { font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 0.25rem; }
-        .timer-display.expired { color: #dc3545; }
+        .timer-display { font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 0.25rem; color: #f0efe9; }
+        .timer-display.expired { color: #e07070; }
         .half-timer { font-size: 0.85rem; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-bottom: 1rem; }
         .halftime-heading { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
         .halftime-countdown { font-size: 2.5rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-muted); margin-bottom: 1rem; }
@@ -825,24 +825,24 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
         .timer-btns button { flex: 1; min-width: 80px; }
         .player-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
         .field-btn { display: flex; flex-direction: column; align-items: center; padding: 0.4rem 0.5rem; min-height: 48px; border-radius: var(--radius); }
-        .field-btn.role-offense { background: #cce5ff; color: #004085; }
-        .field-btn.role-defense { background: #d4edda; color: #155724; }
-        .field-btn.role-goalkeeper { background: #fff3cd; color: #856404; }
-        .field-btn.role-none { background: var(--border); color: var(--text); }
+        .field-btn.role-offense { background: #162b3d; color: #90c4f0; }
+        .field-btn.role-defense { background: #1a3520; color: #90d490; }
+        .field-btn.role-goalkeeper { background: #3d3010; color: #f0c870; }
+        .field-btn.role-none { background: #242422; color: #666663; }
         .field-name { font-weight: 600; font-size: 0.95rem; }
         .field-role { font-size: 0.7rem; margin-top: 2px; text-transform: uppercase; opacity: 0.8; }
         .sitting-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .sitting-player { background: #f8d7da; color: #721c24; padding: 0.4rem 0.75rem; border-radius: var(--radius); font-size: 0.9rem; border: none; cursor: pointer; }
+        .sitting-player { background: #3d1818; color: #c07070; padding: 0.4rem 0.75rem; border-radius: var(--radius); font-size: 0.9rem; border: 1px dashed #5a2020; cursor: pointer; }
         .field-leave { position: absolute; top: 4px; right: 4px; font-size: 0.8rem; opacity: 0.6; line-height: 1; padding: 2px 4px; }
         .field-btn { position: relative; }
-        .add-arrival-btn { font-size: 0.75rem; color: var(--green); background: none; border: none; padding: 0; min-height: unset; font-weight: 600; cursor: pointer; }
+        .add-arrival-btn { font-size: 0.75rem; color: #5cb85c; background: none; border: none; padding: 0; min-height: unset; font-weight: 600; cursor: pointer; }
         .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; }
-        .sheet { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 16px 16px 0 0; padding: 1.25rem 1rem 2rem; z-index: 101; box-shadow: 0 -4px 24px rgba(0,0,0,0.15); }
+        .sheet { position: fixed; bottom: 0; left: 0; right: 0; background: #1c1c1a; border-radius: 16px 16px 0 0; padding: 1.25rem 1rem 2rem; z-index: 101; box-shadow: 0 -4px 24px rgba(0,0,0,0.5); }
         .sheet-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem; }
         .sheet-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
         .sheet-list { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem; }
-        .sheet-row { display: flex; align-items: center; padding: 0.75rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: white; min-height: 48px; cursor: pointer; text-align: left; }
-        .sheet-cancel { width: 100%; padding: 0.75rem; background: var(--border); color: var(--text); border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; min-height: 48px; cursor: pointer; }
+        .sheet-row { display: flex; align-items: center; padding: 0.75rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: #242422; min-height: 48px; cursor: pointer; text-align: left; }
+        .sheet-cancel { width: 100%; padding: 0.75rem; background: #2a2a28; color: #a8a79f; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; min-height: 48px; cursor: pointer; }
         .score-row { text-align: center; margin-bottom: 0.75rem; }
         .score-display { font-size: 1.4rem; font-weight: 700; }
         .score-btns { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
@@ -852,17 +852,17 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
         .plan-toggle-btn { display: flex; width: 100%; background: none; border: none; cursor: pointer; align-items: center; justify-content: space-between; padding: 0; }
         .plan-half-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
         .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
-        .plan-block { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.35rem; }
-        .plan-block-current { background: #e8f4fd; border: 1.5px solid #004085; }
+        .plan-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.35rem; }
+        .plan-block-current { background: #162b3d; border: 1.5px solid #4a90d4; }
         .plan-block-past { opacity: 0.4; }
         .plan-time { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
-        .plan-gk { font-size: 0.7rem; font-weight: 700; color: #856404; background: #fff3cd; border-radius: 3px; padding: 2px 4px; margin-bottom: 2px; }
-        .plan-field { font-size: 0.7rem; color: #155724; padding: 1px 0; }
-        .plan-sit { font-size: 0.7rem; color: #721c24; padding: 1px 0; }
+        .plan-gk { font-size: 0.7rem; font-weight: 700; color: #f0c870; background: #3d3010; border-radius: 3px; padding: 2px 4px; margin-bottom: 2px; }
+        .plan-field { font-size: 0.7rem; color: #90d490; padding: 1px 0; }
+        .plan-sit { font-size: 0.7rem; color: #c07070; padding: 1px 0; }
         .subs-list { display: flex; flex-direction: column; gap: 0.25rem; }
         .sub-row { font-size: 0.95rem; padding: 0.2rem 0; }
-        .sub-off { color: #721c24; }
-        .sub-on { color: #155724; }
+        .sub-off { color: #c07070; }
+        .sub-on { color: #90d490; }
         .sub-arrow { color: var(--text-muted); }
       `}</style>
     </div>

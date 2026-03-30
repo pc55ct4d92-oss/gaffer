@@ -7,7 +7,7 @@
 }
 
 .app-header {
-  background: var(--green);
+  background: #1c3d1c;
   color: white;
   padding: 0.75rem 1rem;
   display: flex;
@@ -23,7 +23,7 @@
 
 .season-label {
   font-size: 0.85rem;
-  opacity: 0.8;
+  color: #7db87d;
 }
 
 .app-main {
@@ -35,7 +35,7 @@
 .tab-bar {
   display: flex;
   border-top: 1px solid var(--border);
-  background: var(--surface);
+  background: #111110;
   flex-shrink: 0;
 }
 
@@ -44,14 +44,14 @@
   border-radius: 0;
   min-height: var(--tab-height);
   background: none;
-  color: var(--text-muted);
+  color: #666663;
   font-size: 0.85rem;
   font-weight: 500;
   border-top: 3px solid transparent;
 }
 
 .tab-btn.active {
-  color: var(--green);
-  border-top-color: var(--green);
+  color: #5cb85c;
+  border-top-color: #5cb85c;
   font-weight: 700;
 }

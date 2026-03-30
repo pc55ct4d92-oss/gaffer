@@ -5,13 +5,13 @@
 }
 
 :root {
-  --green: #2d6a2d;
-  --green-light: #4caf50;
-  --bg: #f5f5f5;
-  --surface: #ffffff;
-  --text: #1a1a1a;
-  --text-muted: #666;
-  --border: #ddd;
+  --green: #2a6e2a;
+  --green-light: #5cb85c;
+  --bg: #111110;
+  --surface: #1c1c1a;
+  --text: #f0efe9;
+  --text-muted: #888780;
+  --border: #2a2a28;
   --radius: 8px;
   --tab-height: 56px;
 }
@@ -40,13 +40,13 @@ button {
 }
 
 button.primary {
-  background: var(--green);
-  color: white;
+  background: #2a6e2a;
+  color: #c8f0c8;
 }
 
 button.secondary {
-  background: var(--border);
-  color: var(--text);
+  background: #2a2a28;
+  color: #a8a79f;
 }
 
 button:disabled {
@@ -71,13 +71,13 @@ button:disabled {
 }
 
 .badge.gk {
-  background: #fff3cd;
-  color: #856404;
+  background: #3d3010;
+  color: #f0c870;
 }
 
 .badge.active {
-  background: #d4edda;
-  color: #155724;
+  background: #1a3520;
+  color: #90d490;
 }
 
 .loading {
@@ -90,8 +90,8 @@ button:disabled {
 
 .error {
   padding: 1rem;
-  background: #f8d7da;
-  color: #721c24;
+  background: #3d1818;
+  color: #c07070;
   border-radius: var(--radius);
   margin: 1rem;
 }
