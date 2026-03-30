@@ -275,15 +275,10 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   };
 
   const doLateArrival = async (playerId) => {
-    // Regenerate future blocks with the new player included
-    const res = await api(`/api/games/${selectedGame.id}/generate-plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newPlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
-    });
-    const newPlan = await res.json();
-
-    // Persist the late player as sitting in the current block so they get a real DB id
+    // Persist the late player as sitting in the current block FIRST so that
+    // generate-plan loads them as a locked-sitting player when it freezes the
+    // current block. Without this, the consecutive-sit rule wouldn't fire and
+    // the player could be assigned sitting again in the very next block.
     const currentBlockId = plan[currentBlockIdx]?.id;
     let savedBpId = null;
     if (currentBlockId) {
@@ -295,6 +290,14 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       const savedBp = await bpRes.json();
       savedBpId = savedBp.id;
     }
+
+    // Regenerate future blocks with the new player included
+    const res = await api(`/api/games/${selectedGame.id}/generate-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
+    });
+    const newPlan = await res.json();
 
     setPlan((prev) => {
       const updated = [...prev];
