@@ -9,6 +9,8 @@
  * - No player sits two consecutive blocks (including H1B3 → H2B1 boundary)
  * - Debt-weighted selection: players who have sat more (higher sitPriority) sit sooner
  *   In-game sit count is the primary tiebreaker so distribution is even within a game
+ * - If a player sat block 1 of the previous game, they are locked onto the field for block 1
+ *   of the current game (only if attending and not already explicitly locked in/out)
  */
 
 function generatePlan(game, allGames, locks = []) {
@@ -22,6 +24,10 @@ function generatePlan(game, allGames, locks = []) {
   // Build sit-priority map from historical data (excluding current game)
   // Higher value = player needs to sit more = chosen first to sit
   const sitPriorityMap = buildSitPriorityMap(attending, allGames, game.id);
+
+  // Players who sat block 1 of the most recent previous game get locked onto
+  // the field for block 1 of this game (fairness carry-over rule)
+  const prevGameBlock1Sitters = buildPrevGameBlock1Sitters(allGames, game.id);
 
   // Identify goalies
   const h1Goalie = attending.find((gp) => gp.goalieHalf === 1);
@@ -76,6 +82,16 @@ function generatePlan(game, allGames, locks = []) {
       const pid = parseInt(playerIdStr);
       if (isOnField) lockedIn.add(pid);
       else lockedOut.add(pid);
+    }
+
+    // Block 1 carry-over rule: lock in players who sat block 1 last game,
+    // unless already explicitly locked in or out by user
+    if (bi === 0) {
+      for (const pid of prevGameBlock1Sitters) {
+        if (!lockedIn.has(pid) && !lockedOut.has(pid) && attending.some((gp) => gp.playerId === pid)) {
+          lockedIn.add(pid);
+        }
+      }
     }
 
     // Eligible to volunteer as sitters: not locked in, not sitting previous block
@@ -149,6 +165,26 @@ function generatePlan(game, allGames, locks = []) {
   }
 
   return plan;
+}
+
+/**
+ * Find players who sat block 1 (H1B1) of the most recent previous game.
+ * Returns a Set of playerIds.
+ */
+function buildPrevGameBlock1Sitters(allGames, currentGameId) {
+  const prevGames = allGames
+    .filter((g) => g.id !== currentGameId)
+    .sort((a, b) => (b.gameNumber ?? b.id) - (a.gameNumber ?? a.id));
+
+  const prevGame = prevGames[0];
+  if (!prevGame) return new Set();
+
+  const block1 = prevGame.blocks?.find((b) => b.half === 1 && b.blockNumber === 1);
+  if (!block1) return new Set();
+
+  return new Set(
+    block1.blockPlayers.filter((bp) => !bp.isOnField).map((bp) => bp.playerId)
+  );
 }
 
 /**
