@@ -364,7 +364,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   };
 
   const doEarlyLeave = async () => {
-    const { playerId, blockPlayerId, role } = leaveSheet;
+    const { playerId, role } = leaveSheet;
     const elapsed = blockStartTime ? (Date.now() - blockStartTime) / 60000 : 0;
     const credit = elapsed >= 4 ? 8 : 4;
 
@@ -384,28 +384,38 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       }),
     });
 
-    // PATCH current and future blockplayer DB records
-    await Promise.all(
-      plan.slice(currentBlockIdx).flatMap((block) => {
-        const bp = block.blockPlayers.find((bp) => bp.playerId === playerId);
-        if (!bp || !bp.id || !bp.isOnField) return [];
-        return [api(`/api/blockplayers/${bp.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isOnField: false, role: null }),
-        })];
-      })
-    );
+    // PATCH current block's blockplayer to off-field
+    const currentBlockBp = currentBlock?.blockPlayers.find((bp) => bp.playerId === playerId);
+    if (currentBlockBp?.id && currentBlockBp.isOnField) {
+      await api(`/api/blockplayers/${currentBlockBp.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isOnField: false, role: null }),
+      });
+    }
+
+    // Regenerate future blocks excluding the leaving player
+    const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ removePlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
+    });
+    const newPlan = await regenRes.json();
 
     setPlan((prev) =>
       prev.map((block, i) => {
         if (i < currentBlockIdx) return block;
-        return {
-          ...block,
-          blockPlayers: block.blockPlayers.map((bp) =>
-            bp.playerId === playerId ? { ...bp, isOnField: false, role: null } : bp
-          ),
-        };
+        if (i === currentBlockIdx) {
+          return {
+            ...block,
+            blockPlayers: block.blockPlayers.map((bp) =>
+              bp.playerId === playerId ? { ...bp, isOnField: false, role: null } : bp
+            ),
+          };
+        }
+        const regenerated = newPlan.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
+        if (regenerated) return { ...regenerated, blockPlayers: regenerated.assignments };
+        return block;
       })
     );
 
@@ -624,7 +634,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                 >
                   <span className="field-name">{playerName(bp.playerId)}</span>
                   <span className="field-role">{bp.role || '—'}</span>
-
+                  <span className="field-leave" onClick={(e) => { e.stopPropagation(); setLeaveSheet({ playerId: bp.playerId, role: bp.role }); }}>✕</span>
                 </button>
               ))}
             </div>
@@ -633,6 +643,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                 <div className="field-btn role-goalkeeper" style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', gap: '0.5rem' }}>
                   <span className="field-name">{playerName(bp.playerId)}</span>
                   <span className="field-role">GOALKEEPER</span>
+                  <span className="field-leave" onClick={() => setLeaveSheet({ playerId: bp.playerId, role: bp.role })}>✕</span>
                 </div>
               </div>
             ))}
@@ -833,7 +844,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
         .field-role { font-size: 0.7rem; margin-top: 2px; text-transform: uppercase; opacity: 0.8; }
         .sitting-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .sitting-player { background: #3d1818; color: #c07070; padding: 0.4rem 0.75rem; border-radius: var(--radius); font-size: 0.9rem; border: 1px dashed #5a2020; cursor: pointer; }
-        .field-leave { position: absolute; top: 4px; right: 4px; font-size: 0.8rem; opacity: 0.6; line-height: 1; padding: 2px 4px; }
+        .field-leave { position: absolute; top: 4px; right: 4px; font-size: 0.8rem; opacity: 0.6; line-height: 1; padding: 2px 4px; cursor: pointer; }
         .field-btn { position: relative; }
         .add-arrival-btn { font-size: 0.75rem; color: #5cb85c; background: none; border: none; padding: 0; min-height: unset; font-weight: 600; cursor: pointer; }
         .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; }

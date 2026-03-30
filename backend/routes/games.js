@@ -80,11 +80,11 @@ router.post('/:id/setup', async (req, res) => {
 });
 
 // POST /api/games/:id/generate-plan
-// Body: { locks: [{ half, blockNumber, playerId, isOnField, role }], fromBlockIndex?: number, newPlayerId?: number }
+// Body: { locks: [{ half, blockNumber, playerId, isOnField, role }], fromBlockIndex?: number, newPlayerId?: number, removePlayerId?: number }
 router.post('/:id/generate-plan', async (req, res) => {
   try {
     const gameId = parseInt(req.params.id);
-    const { locks = [], fromBlockIndex, newPlayerId } = req.body;
+    const { locks = [], fromBlockIndex, newPlayerId, removePlayerId } = req.body;
 
     // Upsert late arrival before loading the game
     if (newPlayerId) {
@@ -92,6 +92,14 @@ router.post('/:id/generate-plan', async (req, res) => {
         where: { gameId_playerId: { gameId, playerId: newPlayerId } },
         update: { attending: true },
         create: { gameId, playerId: newPlayerId, attending: true },
+      });
+    }
+
+    // Mark early-leaving player as no longer attending before loading the game
+    if (removePlayerId) {
+      await prisma.gamePlayer.update({
+        where: { gameId_playerId: { gameId, playerId: removePlayerId } },
+        data: { attending: false },
       });
     }
 
