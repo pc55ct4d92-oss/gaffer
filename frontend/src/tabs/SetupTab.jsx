@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 
-export default function SetupTab({ activeSeason, activeGame, setActiveGame, setActiveTab }) {
+export default function SetupTab({ activeSeason, activeGame, setActiveGame, setActiveTab, setPlanVersion }) {
   const [games, setGames] = useState([]);
   const [players, setPlayers] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
@@ -200,7 +200,6 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
       if (res.ok) {
         // generate-plan returns blocks with "assignments"; normalize to "blockPlayers" for BlockCards
         setPlan(planData.map((block) => ({ ...block, blockPlayers: block.assignments })));
-        setActiveGame(selectedGame);
       } else {
         setError(planData.error);
       }
@@ -328,7 +327,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
             <button className="secondary" onClick={generatePlan} disabled={generating} style={{ flex: 1 }}>
               {generating ? 'Generating…' : 'Regenerate'}
             </button>
-            <button className="primary" style={{ flex: 1 }} onClick={() => { setActiveGame(selectedGame); setActiveTab('game'); }}>
+            <button className="primary" style={{ flex: 1 }} onClick={() => { setActiveGame(selectedGame); setPlanVersion((v) => v + 1); setActiveTab('game'); }}>
               Start Game →
             </button>
           </div>

@@ -18,6 +18,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('roster');
   const [activeSeason, setActiveSeason] = useState(null);
   const [activeGame, setActiveGame] = useState(null);
+  const [planVersion, setPlanVersion] = useState(0);
 
   useEffect(() => {
     api('/api/seasons')
@@ -41,7 +42,7 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  const ctx = { activeSeason, setActiveSeason, activeGame, setActiveGame, setActiveTab };
+  const ctx = { activeSeason, setActiveSeason, activeGame, setActiveGame, setActiveTab, planVersion, setPlanVersion };
 
   return (
     <div className="app">

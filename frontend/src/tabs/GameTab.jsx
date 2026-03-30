@@ -4,7 +4,7 @@ import { saveSession, clearSession, loadSession } from '../gameSession';
 
 const BLOCK_DURATION = 8 * 60; // 8 minutes in seconds
 
-export default function GameTab({ activeSeason, activeGame, setActiveGame, setActiveTab }) {
+export default function GameTab({ activeSeason, activeGame, setActiveGame, setActiveTab, planVersion }) {
   const [games, setGames] = useState([]);
   const [players, setPlayers] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
@@ -78,7 +78,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       .then((r) => r.json())
       .then((data) => setGoals(data))
       .catch(() => {});
-  }, [selectedGame]);
+  }, [selectedGame, planVersion]);
 
   // Reload recovery — restore timer/block state from localStorage if session matches
   useEffect(() => {
