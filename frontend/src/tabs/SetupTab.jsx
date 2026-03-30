@@ -338,8 +338,18 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
       )}
 
       {swapSheet && (() => {
-        const inPlayer = players.find((p) => p.id === swapSheet.playerId);
-        const inName = inPlayer ? inPlayer.name.split(' ')[0] : `#${swapSheet.playerId}`;
+        const displayName = (id) => {
+          const p = players.find((pl) => pl.id === id);
+          if (!p) return `#${id}`;
+          const firstName = p.name.split(' ')[0];
+          const hasDuplicate = players.some((pl) => pl.id !== p.id && pl.name.split(' ')[0] === firstName);
+          if (hasDuplicate) {
+            const lastName = p.name.split(' ')[1];
+            return lastName ? `${firstName} ${lastName[0]}` : firstName;
+          }
+          return firstName;
+        };
+        const inName = displayName(swapSheet.playerId);
         const half = swapSheet.blockIndex < 3 ? 1 : 2;
         const blockNumber = (swapSheet.blockIndex % 3) + 1;
         const block = plan?.find((b) => b.half === half && b.blockNumber === blockNumber);
@@ -352,8 +362,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
               <div className="sheet-sub">Block {blockNumber} · {half === 1 ? '1st' : '2nd'} half · Pick who comes off.</div>
               <div className="sheet-list">
                 {fieldPlayers.map((bp) => {
-                  const outPlayer = players.find((p) => p.id === bp.playerId);
-                  const outName = outPlayer ? outPlayer.name.split(' ')[0] : `#${bp.playerId}`;
+                  const outName = displayName(bp.playerId);
                   return (
                     <button key={bp.playerId} className="sheet-row" onClick={() => doSwap(bp.playerId)}>
                       <span className="sheet-out">{outName}</span>
