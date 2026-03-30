@@ -303,23 +303,38 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     const outBp = onField.find((bp) => bp.playerId === outPlayerId);
     const role = outBp?.role ?? null;
 
+    // Persist the sub for the current block
     await api(`/api/games/${selectedGame.id}/emergency-sub`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ blockId, outPlayerId, inPlayerId, role }),
     });
 
+    // Regenerate future blocks based on the updated current block lineup
+    const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fromBlockIndex: currentBlockIdx + 1, locks: [] }),
+    });
+    const newPlan = await regenRes.json();
+
     setPlan((prev) =>
       prev.map((block, i) => {
-        if (i !== currentBlockIdx) return block;
-        return {
-          ...block,
-          blockPlayers: block.blockPlayers.map((bp) => {
-            if (bp.playerId === outPlayerId) return { ...bp, isOnField: false, role: null };
-            if (bp.playerId === inPlayerId) return { ...bp, isOnField: true, role };
-            return bp;
-          }),
-        };
+        if (i === currentBlockIdx) {
+          // Update current block with the sub
+          return {
+            ...block,
+            blockPlayers: block.blockPlayers.map((bp) => {
+              if (bp.playerId === outPlayerId) return { ...bp, isOnField: false, role: null };
+              if (bp.playerId === inPlayerId) return { ...bp, isOnField: true, role };
+              return bp;
+            }),
+          };
+        }
+        // Replace future blocks with regenerated assignments
+        const regenerated = newPlan.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
+        if (regenerated) return { ...regenerated, blockPlayers: regenerated.assignments };
+        return block;
       })
     );
     setSubSheet(null);
