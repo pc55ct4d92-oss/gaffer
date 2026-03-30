@@ -196,6 +196,22 @@ router.get('/:id/plan', async (req, res) => {
   }
 });
 
+// POST /api/games/:id/add-sitting-player
+// Body: { blockId, playerId } — persists a player as sitting in an existing block (e.g. late arrival)
+router.post('/:id/add-sitting-player', async (req, res) => {
+  try {
+    const { blockId, playerId } = req.body;
+    const bp = await prisma.blockPlayer.upsert({
+      where: { blockId_playerId: { blockId, playerId } },
+      update: { isOnField: false, role: null },
+      create: { blockId, playerId, isOnField: false, role: null },
+    });
+    res.json(bp);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/games/:id/emergency-sub
 // Body: { blockId, outPlayerId, inPlayerId, role }
 router.post('/:id/emergency-sub', async (req, res) => {

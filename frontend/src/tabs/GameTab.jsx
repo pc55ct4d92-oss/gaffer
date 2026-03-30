@@ -25,6 +25,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   const [isGameOver, setIsGameOver] = useState(false);
   const [goals, setGoals] = useState([]);
   const [scorerSheet, setScorerSheet] = useState(false);
+  const [subSheet, setSubSheet] = useState(null); // { playerId } — sitting player selected for emergency sub
   const timerRef = useRef(null);
   const halfTimerRef = useRef(null);
   const halftimeRef = useRef(null);
@@ -250,12 +251,26 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   };
 
   const doLateArrival = async (playerId) => {
+    // Regenerate future blocks with the new player included
     const res = await api(`/api/games/${selectedGame.id}/generate-plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newPlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
     });
     const newPlan = await res.json();
+
+    // Persist the late player as sitting in the current block so they get a real DB id
+    const currentBlockId = plan[currentBlockIdx]?.id;
+    let savedBpId = null;
+    if (currentBlockId) {
+      const bpRes = await api(`/api/games/${selectedGame.id}/add-sitting-player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blockId: currentBlockId, playerId }),
+      });
+      const savedBp = await bpRes.json();
+      savedBpId = savedBp.id;
+    }
 
     setPlan((prev) => {
       const updated = [...prev];
@@ -264,12 +279,12 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
         const block = newPlan.find((b) => b.half === updated[i].half && b.blockNumber === updated[i].blockNumber);
         if (block) updated[i] = { ...block, blockPlayers: block.assignments };
       }
-      // Add arriving player to current block as sitting if not already present
+      // Add arriving player to current block as sitting with their real DB id
       const cur = updated[currentBlockIdx];
       if (!cur.blockPlayers.some((bp) => bp.playerId === playerId)) {
         updated[currentBlockIdx] = {
           ...cur,
-          blockPlayers: [...cur.blockPlayers, { id: null, playerId, isOnField: false, role: null }],
+          blockPlayers: [...cur.blockPlayers, { id: savedBpId, playerId, isOnField: false, role: null }],
         };
       }
       return updated;
@@ -280,6 +295,34 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       [playerId]: prev[playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 },
     }));
     setArrivalSheet(false);
+  };
+
+  const doEmergencySub = async (outPlayerId) => {
+    const inPlayerId = subSheet.playerId;
+    const blockId = currentBlock.id;
+    const outBp = onField.find((bp) => bp.playerId === outPlayerId);
+    const role = outBp?.role ?? null;
+
+    await api(`/api/games/${selectedGame.id}/emergency-sub`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blockId, outPlayerId, inPlayerId, role }),
+    });
+
+    setPlan((prev) =>
+      prev.map((block, i) => {
+        if (i !== currentBlockIdx) return block;
+        return {
+          ...block,
+          blockPlayers: block.blockPlayers.map((bp) => {
+            if (bp.playerId === outPlayerId) return { ...bp, isOnField: false, role: null };
+            if (bp.playerId === inPlayerId) return { ...bp, isOnField: true, role };
+            return bp;
+          }),
+        };
+      })
+    );
+    setSubSheet(null);
   };
 
   const doEarlyLeave = async () => {
@@ -564,9 +607,13 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
             </div>
             <div className="sitting-list">
               {sitting.map((bp) => (
-                <div key={bp.id} className="sitting-player">
+                <button
+                  key={bp.id ?? bp.playerId}
+                  className="sitting-player"
+                  onClick={() => setSubSheet({ playerId: bp.playerId })}
+                >
                   {playerName(bp.playerId)}
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -606,6 +653,29 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
               </div>
             </>
           )}
+
+          {subSheet && (() => {
+            const inPlayer = players.find((p) => p.id === subSheet.playerId);
+            const fieldOptions = onField.filter((bp) => bp.role !== 'goalkeeper');
+            return (
+              <>
+                <div className="sheet-backdrop" onClick={() => setSubSheet(null)} />
+                <div className="sheet" onClick={(e) => e.stopPropagation()}>
+                  <div className="sheet-title">Emergency Sub</div>
+                  <div className="sheet-sub">Bringing on {inPlayer?.name?.split(' ')[0]}. Who is coming off?</div>
+                  <div className="sheet-list">
+                    {fieldOptions.map((bp) => (
+                      <button key={bp.playerId} className="sheet-row" onClick={() => doEmergencySub(bp.playerId)}>
+                        <span style={{ fontWeight: 600 }}>{playerName(bp.playerId)}</span>
+                        <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{bp.role || '—'}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button className="sheet-cancel" onClick={() => setSubSheet(null)}>Cancel</button>
+                </div>
+              </>
+            );
+          })()}
 
           {scorerSheet && (
             <>
@@ -679,7 +749,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
         .field-name { font-weight: 600; font-size: 0.95rem; }
         .field-role { font-size: 0.7rem; margin-top: 2px; text-transform: uppercase; opacity: 0.8; }
         .sitting-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .sitting-player { background: #f8d7da; color: #721c24; padding: 0.4rem 0.75rem; border-radius: var(--radius); font-size: 0.9rem; }
+        .sitting-player { background: #f8d7da; color: #721c24; padding: 0.4rem 0.75rem; border-radius: var(--radius); font-size: 0.9rem; border: none; cursor: pointer; }
         .field-leave { position: absolute; top: 4px; right: 4px; font-size: 0.8rem; opacity: 0.6; line-height: 1; padding: 2px 4px; }
         .field-btn { position: relative; }
         .add-arrival-btn { font-size: 0.75rem; color: var(--green); background: none; border: none; padding: 0; min-height: unset; font-weight: 600; cursor: pointer; }
