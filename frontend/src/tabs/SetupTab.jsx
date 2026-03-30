@@ -252,21 +252,11 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
             </button>
           </form>
         )}
-        <select
-          className="select"
-          value={selectedGame?.id || ''}
-          onChange={(e) => {
-            const g = games.find((g) => g.id === parseInt(e.target.value));
-            setSelectedGame(g);
-            setLocks([]);
-          }}
-        >
-          {games.map((g) => (
-            <option key={g.id} value={g.id}>
-              Game {g.gameNumber}{g.date ? ` — ${new Date(g.date).toLocaleDateString()}` : ''}
-            </option>
-          ))}
-        </select>
+        {selectedGame && (
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, padding: '0.4rem 0' }}>
+            Game {selectedGame.gameNumber}{selectedGame.date ? ` — ${new Date(selectedGame.date).toLocaleDateString()}` : ''}
+          </div>
+        )}
       </div>
 
       {loading && <div className="loading">Loading…</div>}
