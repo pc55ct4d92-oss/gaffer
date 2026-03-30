@@ -15,6 +15,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [blockStartTime, setBlockStartTime] = useState(null);
+  const [halfStartTime, setHalfStartTime] = useState(null);
   const [playerMinutes, setPlayerMinutes] = useState({});
   const [halfTimerSeconds, setHalfTimerSeconds] = useState(0);
   const [halfTimerRunning, setHalfTimerRunning] = useState(false);
@@ -102,6 +103,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     if (session.halfStartTime != null) {
       const halfElapsed = Math.floor((Date.now() - session.halfStartTime) / 1000);
       setHalfTimerSeconds(halfElapsed);
+      setHalfStartTime(session.halfStartTime);
       setHalfTimerRunning(true);
     }
   }, [selectedGame]);
@@ -153,6 +155,24 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     return () => clearInterval(timerRef.current);
   }, [timerRunning]);
 
+  // Resync timers from absolute timestamps when app returns to foreground
+  // (iOS Safari throttles setInterval when screen is locked or app is backgrounded)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (timerRunning && blockStartTime != null) {
+        const elapsed = Math.floor((Date.now() - blockStartTime) / 1000);
+        setTimerSeconds(Math.max(BLOCK_DURATION - elapsed, 0));
+      }
+      if (halfTimerRunning && halfStartTime != null) {
+        const halfElapsed = Math.floor((Date.now() - halfStartTime) / 1000);
+        setHalfTimerSeconds(halfElapsed);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [timerRunning, blockStartTime, halfTimerRunning, halfStartTime]);
+
   const advanceBlock = async () => {
     if (currentBlockIdx > 5) return;
 
@@ -202,6 +222,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       setHalfTimerRunning(false);
       setHalfTimerSeconds(0);
       setBlockStartTime(null);
+      setHalfStartTime(null);
       saveSession({
         activeGameId: selectedGame.id,
         currentBlockIndex: nextBlockIdx,
@@ -213,6 +234,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     } else {
       const now = Date.now();
       setBlockStartTime(now);
+      setHalfStartTime(now);
       setTimerRunning(true);
       saveSession({
         activeGameId: selectedGame.id,
@@ -501,6 +523,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                   setHalfTimerSeconds(0);
                   setHalfTimerRunning(true);
                   setBlockStartTime(now);
+                  setHalfStartTime(now);
                   setTimerRunning(true);
                   saveSession({
                     activeGameId: selectedGame.id,
@@ -529,6 +552,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                       if (!timerRunning && blockStartTime === null) {
                         const now = Date.now();
                         setBlockStartTime(now);
+                        setHalfStartTime(now);
                         setHalfTimerRunning(true);
                         saveSession({
                           activeGameId: selectedGame.id,

@@ -265,7 +265,11 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
         <>
           <div className="card">
             <h3 className="subsection">Attendance ({attending.length} attending)</h3>
-            {setup.gamePlayers.map((gp) => {
+            {[...setup.gamePlayers].sort((a, b) => {
+              const aName = players.find((p) => p.id === a.playerId)?.name || '';
+              const bName = players.find((p) => p.id === b.playerId)?.name || '';
+              return aName.localeCompare(bName);
+            }).map((gp) => {
               const p = players.find((pl) => pl.id === gp.playerId);
               if (!p) return null;
               return (
