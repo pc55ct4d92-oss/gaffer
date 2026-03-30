@@ -211,6 +211,22 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
 
   if (!activeSeason) return <div className="loading">No active season</div>;
 
+  if (activeGame) {
+    return (
+      <div>
+        <h2 className="section-title">Game Setup</h2>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1rem' }}>
+            Game {activeGame.gameNumber} is currently in progress. Finish the game before making setup changes.
+          </p>
+          <button className="primary" style={{ width: '100%' }} onClick={() => setActiveTab('game')}>
+            Go to Game →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const attending = setup?.gamePlayers.filter((gp) => gp.attending) || [];
   const gkEligible = attending.filter((gp) => {
     const p = players.find((pl) => pl.id === gp.playerId);

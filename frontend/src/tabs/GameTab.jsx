@@ -27,6 +27,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   const [goals, setGoals] = useState([]);
   const [scorerSheet, setScorerSheet] = useState(false);
   const [subSheet, setSubSheet] = useState(null); // { playerId } — sitting player selected for emergency sub
+  const [planExpanded, setPlanExpanded] = useState(false);
   const timerRef = useRef(null);
   const halfTimerRef = useRef(null);
   const halftimeRef = useRef(null);
@@ -675,6 +676,49 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
               </div>
             );
           })()}
+          {plan && (
+            <div className="card" style={{ marginTop: '0.5rem' }}>
+              <button className="plan-toggle-btn" onClick={() => setPlanExpanded((v) => !v)}>
+                <h3 className="subsection" style={{ margin: 0 }}>Block Plan</h3>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{planExpanded ? 'Hide' : 'Show'}</span>
+              </button>
+              {planExpanded && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  {[1, 2].map((half) => (
+                    <div key={half} style={{ marginBottom: '0.75rem' }}>
+                      <div className="plan-half-label">{half === 1 ? '1st Half' : '2nd Half'}</div>
+                      <div className="plan-grid">
+                        {[1, 2, 3].map((bn) => {
+                          const bi = (half - 1) * 3 + (bn - 1);
+                          const block = plan.find((b) => b.half === half && b.blockNumber === bn);
+                          if (!block) return null;
+                          const isCurrent = bi === currentBlockIdx;
+                          const isPast = bi < currentBlockIdx;
+                          const TIMES = ['0–8m', '8–16m', '16–24m'];
+                          const gk = block.blockPlayers.find((bp) => bp.isOnField && bp.role === 'goalkeeper');
+                          const field = block.blockPlayers.filter((bp) => bp.isOnField && bp.role !== 'goalkeeper');
+                          const sitting = block.blockPlayers.filter((bp) => !bp.isOnField);
+                          return (
+                            <div key={bn} className={`plan-block${isCurrent ? ' plan-block-current' : ''}${isPast ? ' plan-block-past' : ''}`}>
+                              <div className="plan-time">{TIMES[bn - 1]}</div>
+                              {gk && <div className="plan-gk">{playerName(gk.playerId)}</div>}
+                              {field.map((bp) => (
+                                <div key={bp.playerId} className="plan-field">{playerName(bp.playerId)}</div>
+                              ))}
+                              {sitting.map((bp) => (
+                                <div key={bp.playerId} className="plan-sit">↓ {playerName(bp.playerId)}</div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {arrivalSheet && (
             <>
               <div className="sheet-backdrop" onClick={() => setArrivalSheet(false)} />
@@ -805,6 +849,16 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
         .goal-log { display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px solid var(--border); padding-top: 0.6rem; }
         .goal-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; padding: 0.15rem 0; }
         .goal-undo { background: none; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer; padding: 0 0.25rem; min-height: unset; line-height: 1; }
+        .plan-toggle-btn { display: flex; width: 100%; background: none; border: none; cursor: pointer; align-items: center; justify-content: space-between; padding: 0; }
+        .plan-half-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+        .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
+        .plan-block { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.35rem; }
+        .plan-block-current { background: #e8f4fd; border: 1.5px solid #004085; }
+        .plan-block-past { opacity: 0.4; }
+        .plan-time { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
+        .plan-gk { font-size: 0.7rem; font-weight: 700; color: #856404; background: #fff3cd; border-radius: 3px; padding: 2px 4px; margin-bottom: 2px; }
+        .plan-field { font-size: 0.7rem; color: #155724; padding: 1px 0; }
+        .plan-sit { font-size: 0.7rem; color: #721c24; padding: 1px 0; }
         .subs-list { display: flex; flex-direction: column; gap: 0.25rem; }
         .sub-row { font-size: 0.95rem; padding: 0.2rem 0; }
         .sub-off { color: #721c24; }
