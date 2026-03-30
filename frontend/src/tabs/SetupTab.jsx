@@ -323,7 +323,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
       {plan && plan.length > 0 && (
         <div style={{ marginTop: '1rem' }}>
           <h3 className="subsection" style={{ paddingLeft: '0.25rem' }}>Plan Preview</h3>
-          <BlockCards plan={plan} players={players} onSitPlayerTap={(playerId, blockIndex) => setSwapSheet({ playerId, blockIndex })} />
+          <BlockCards plan={plan} players={players} locks={locks} onSitPlayerTap={(playerId, blockIndex) => setSwapSheet({ playerId, blockIndex })} />
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
             <button className="secondary" onClick={generatePlan} disabled={generating} style={{ flex: 1 }}>
               {generating ? 'Generating…' : 'Regenerate'}
@@ -407,7 +407,7 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
 
 const BLOCK_TIMES = ['0–8m', '8–16m', '16–24m'];
 
-function BlockCards({ plan, players, onSitPlayerTap }) {
+function BlockCards({ plan, players, locks, onSitPlayerTap }) {
   const playerName = (id) => {
     const p = players.find((pl) => pl.id === id);
     if (!p) return `#${id}`;
@@ -419,6 +419,9 @@ function BlockCards({ plan, players, onSitPlayerTap }) {
     }
     return firstName;
   };
+
+  const isLocked = (playerId, blockIndex) =>
+    (locks || []).some((l) => l.playerId === playerId && l.blockIndex === blockIndex);
 
   const renderHalf = (half) => (
     <div key={half} className="bc-half">
@@ -434,9 +437,17 @@ function BlockCards({ plan, players, onSitPlayerTap }) {
           return (
             <div key={bn} className="bc-card">
               <div className="bc-time">{BLOCK_TIMES[bn - 1]}</div>
-              {gk && <div className="bc-gk">{playerName(gk.playerId)}</div>}
+              {gk && (
+                <div className="bc-gk">
+                  {isLocked(gk.playerId, blockIndex) && <span className="bc-lock">L</span>}
+                  {playerName(gk.playerId)}
+                </div>
+              )}
               {field.map((bp) => (
-                <div key={bp.playerId} className="bc-field">{playerName(bp.playerId)}</div>
+                <div key={bp.playerId} className="bc-field">
+                  {isLocked(bp.playerId, blockIndex) && <span className="bc-lock">L</span>}
+                  {playerName(bp.playerId)}
+                </div>
               ))}
               {sitting.map((bp) => (
                 <button
@@ -444,6 +455,7 @@ function BlockCards({ plan, players, onSitPlayerTap }) {
                   className="bc-sitting"
                   onClick={() => onSitPlayerTap(bp.playerId, blockIndex)}
                 >
+                  {isLocked(bp.playerId, blockIndex) && <span className="bc-lock">L</span>}
                   ↓ {playerName(bp.playerId)}
                 </button>
               ))}
@@ -467,6 +479,7 @@ function BlockCards({ plan, players, onSitPlayerTap }) {
         .bc-gk { font-size: 0.8rem; font-weight: 700; color: #856404; background: #fff3cd; border-radius: 4px; padding: 3px 5px; }
         .bc-field { font-size: 0.8rem; color: #155724; padding: 2px 0; }
         .bc-sitting { font-size: 0.8rem; color: #721c24; background: none; border: none; border-radius: 4px; padding: 4px 2px; min-height: 36px; width: 100%; text-align: left; cursor: pointer; display: block; }
+        .bc-lock { display: inline-block; font-size: 0.6rem; font-weight: 800; color: #fff; background: #6c757d; border-radius: 3px; padding: 0 3px; margin-right: 3px; line-height: 1.4; vertical-align: middle; }
       `}</style>
     </div>
   );
