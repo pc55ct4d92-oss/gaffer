@@ -101,6 +101,34 @@ router.post('/:id/generate-plan', async (req, res) => {
         where: { gameId_playerId: { gameId, playerId: removePlayerId } },
         data: { attending: false },
       });
+
+      // Delete their BlockPlayer records for all future blocks so stale assignments
+      // don't survive the regeneration (upsert only writes attending players)
+      if (fromBlockIndex != null) {
+        const BLOCKS = [
+          { half: 1, blockNumber: 1 },
+          { half: 1, blockNumber: 2 },
+          { half: 1, blockNumber: 3 },
+          { half: 2, blockNumber: 1 },
+          { half: 2, blockNumber: 2 },
+          { half: 2, blockNumber: 3 },
+        ];
+        const futureBlockDefs = BLOCKS.slice(fromBlockIndex);
+        if (futureBlockDefs.length > 0) {
+          const futureBlocks = await prisma.block.findMany({
+            where: {
+              gameId,
+              OR: futureBlockDefs.map((b) => ({ half: b.half, blockNumber: b.blockNumber })),
+            },
+          });
+          await prisma.blockPlayer.deleteMany({
+            where: {
+              playerId: removePlayerId,
+              blockId: { in: futureBlocks.map((b) => b.id) },
+            },
+          });
+        }
+      }
     }
 
     const game = await prisma.game.findUnique({
