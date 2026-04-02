@@ -214,9 +214,9 @@ function buildSitPriorityMap(attending, allGames, currentGameId) {
       if (!gamePlayer || !gamePlayer.attending) continue;
 
       const attendingGPs = game.gamePlayers.filter((g) => g.attending);
-      const teamMinutes = attendingGPs.reduce((sum, g) => sum + g.totalMinutes, 0);
-      const expectedMinutes = attendingGPs.length > 0 ? teamMinutes / attendingGPs.length : 0;
-      debt += expectedMinutes - gamePlayer.totalMinutes;
+      const teamFieldMinutes = attendingGPs.reduce((sum, g) => sum + g.totalMinutes - g.gkMinutes, 0);
+      const expectedFieldMinutes = attendingGPs.length > 0 ? teamFieldMinutes / attendingGPs.length : 0;
+      debt += expectedFieldMinutes - (gamePlayer.totalMinutes - gamePlayer.gkMinutes);
     }
 
     map[pid] = debt; // positive = played less than expected = higher sit priority
