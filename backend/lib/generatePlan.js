@@ -33,6 +33,9 @@ function generatePlan(game, allGames, locks = []) {
   const h1Goalie = attending.find((gp) => gp.goalieHalf === 1);
   const h2Goalie = attending.find((gp) => gp.goalieHalf === 2);
 
+  if (!h1Goalie) throw new Error('No goalkeeper assigned for half 1');
+  if (!h2Goalie) throw new Error('No goalkeeper assigned for half 2');
+
   const BLOCKS = [
     { half: 1, blockNumber: 1 },
     { half: 1, blockNumber: 2 },

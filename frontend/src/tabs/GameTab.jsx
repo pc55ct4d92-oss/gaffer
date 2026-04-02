@@ -183,7 +183,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     if (currentBlockIdx > 5) return;
 
     const elapsed = blockStartTime
-      ? Math.min(Math.round((Date.now() - blockStartTime) / 60000 * 10) / 10, 8)
+      ? Math.min(Math.max(Math.round((Date.now() - blockStartTime) / 60000 * 10) / 10, 0), 8)
       : 8;
 
     const updated = { ...playerMinutes };
@@ -255,6 +255,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   };
 
   const toggleRole = async (blockPlayerId, currentRole) => {
+    if (currentRole === 'goalkeeper') return;
     const nextRole = currentRole === 'offense' ? 'defense' : 'offense';
     try {
       const res = await api(`/api/blockplayers/${blockPlayerId}`, {
