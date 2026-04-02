@@ -626,7 +626,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
               <h3 className="subsection" style={{ margin: 0 }}>Sitting ({sitting.length})</h3>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 {sitting.length > 0 && (
-                  <button className="add-arrival-btn" onClick={() => setLeaveSelectSheet(true)}>Leave</button>
+                  <button className="add-arrival-btn" onClick={() => setLeaveSelectSheet(true)}>Remove</button>
                 )}
                 {absentPlayers.length > 0 && (
                   <button className="add-arrival-btn" onClick={() => setArrivalSheet(true)}>+ Add</button>
@@ -778,7 +778,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
             <>
               <div className="sheet-backdrop" onClick={() => setLeaveSelectSheet(false)} />
               <div className="sheet" onClick={(e) => e.stopPropagation()}>
-                <div className="sheet-title">Early Leave</div>
+                <div className="sheet-title">Remove Player</div>
                 <div className="sheet-sub">Who is leaving?</div>
                 <div className="sheet-list">
                   {sitting.map((bp) => (
@@ -798,12 +798,12 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
               <>
                 <div className="sheet-backdrop" onClick={() => setLeaveSheet(null)} />
                 <div className="sheet" onClick={(e) => e.stopPropagation()}>
-                  <div className="sheet-title">Early Leave</div>
+                  <div className="sheet-title">Remove Player</div>
                   <div className="sheet-sub">
                     Remove {leavingPlayer?.name} from the rest of the game?
                   </div>
                   <button className="primary" style={{ width: '100%', marginBottom: '0.5rem' }} onClick={doEarlyLeave}>
-                    Confirm Leave
+                    Confirm Remove
                   </button>
                   <button className="sheet-cancel" onClick={() => setLeaveSheet(null)}>Cancel</button>
                 </div>
