@@ -228,10 +228,6 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
   }
 
   const attending = setup?.gamePlayers.filter((gp) => gp.attending) || [];
-  const gkEligible = attending.filter((gp) => {
-    const p = players.find((pl) => pl.id === gp.playerId);
-    return p?.isGKEligible;
-  });
 
   return (
     <div>
@@ -298,10 +294,9 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
                   </button>
                   <span className="player-name">
                     {p.name}
-                    {p.isGKEligible && <span className="badge gk" style={{ marginLeft: 6 }}>GK</span>}
                     {(() => { const d = debtMap[p.id]; if (!d) return null; const r = Math.round(d); if (r === 0) return null; return <span className={`debt-badge ${r > 0 ? 'debt-pos' : 'debt-neg'}`}>{r > 0 ? `+${r}` : r}</span>; })()}
                   </span>
-                  {gp.attending && p.isGKEligible && (
+                  {gp.attending && (
                     <div className="goalie-btns">
                       <button
                         className={`goalie-btn ${gp.goalieHalf === 1 ? 'active' : ''}`}
