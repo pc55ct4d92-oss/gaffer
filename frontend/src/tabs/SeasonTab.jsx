@@ -48,19 +48,18 @@ export default function SeasonTab({ activeSeason, activeGame, setActiveGame }) {
                 <th>MIN</th>
                 <th>OFF</th>
                 <th>DEF</th>
+                <th>GK</th>
                 <th>DEBT</th>
               </tr>
             </thead>
             <tbody>
               {sortedPlayers.map((s) => (
                 <tr key={s.playerId}>
-                  <td>
-                    {s.name}
-                    {s.isGKEligible && <span className="gk-badge">GK</span>}
-                  </td>
+                  <td>{s.name}</td>
                   <td>{Math.round(s.totalMinutes)}</td>
                   <td>{Math.round(s.offenseMinutes)}</td>
                   <td>{Math.round(s.defenseMinutes)}</td>
+                  <td>{Math.round(s.gkMinutes)}</td>
                   <td className={s.debt > 0 ? 'debt-pos' : s.debt < 0 ? 'debt-neg' : ''}>
                     {s.debt > 0 ? '+' : ''}{s.debt.toFixed(1)}
                   </td>
