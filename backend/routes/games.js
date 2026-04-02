@@ -159,7 +159,8 @@ router.post('/:id/generate-plan', async (req, res) => {
 
     const plan = generatePlan(game, allGames, mergedLocks);
 
-    // Persist the plan to Block + BlockPlayer tables
+    // Persist the plan to Block + BlockPlayer tables and capture DB ids
+    const result = [];
     for (const block of plan) {
       const dbBlock = await prisma.block.upsert({
         where: { gameId_half_blockNumber: { gameId, half: block.half, blockNumber: block.blockNumber } },
@@ -167,8 +168,9 @@ router.post('/:id/generate-plan', async (req, res) => {
         create: { gameId, half: block.half, blockNumber: block.blockNumber },
       });
 
+      const assignments = [];
       for (const assignment of block.assignments) {
-        await prisma.blockPlayer.upsert({
+        const dbBp = await prisma.blockPlayer.upsert({
           where: { blockId_playerId: { blockId: dbBlock.id, playerId: assignment.playerId } },
           update: { isOnField: assignment.isOnField, role: assignment.role },
           create: {
@@ -178,10 +180,12 @@ router.post('/:id/generate-plan', async (req, res) => {
             role: assignment.role,
           },
         });
+        assignments.push({ id: dbBp.id, playerId: assignment.playerId, isOnField: assignment.isOnField, role: assignment.role });
       }
+      result.push({ id: dbBlock.id, half: block.half, blockNumber: block.blockNumber, assignments });
     }
 
-    res.json(plan);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

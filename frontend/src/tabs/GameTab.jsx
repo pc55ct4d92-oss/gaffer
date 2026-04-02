@@ -236,14 +236,13 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     } else {
       const now = Date.now();
       setBlockStartTime(now);
-      setHalfStartTime(now);
       setTimerRunning(true);
       saveSession({
         activeGameId: selectedGame.id,
         currentBlockIndex: nextBlockIdx,
         currentHalf: currentBlock?.half ?? 1,
         blockStartTime: now,
-        halfStartTime: now,
+        halfStartTime: halfStartTime,
         isHalftime: false,
       });
     }
