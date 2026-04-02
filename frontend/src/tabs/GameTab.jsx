@@ -373,38 +373,45 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
 
   const doEarlyLeave = async () => {
     const { playerId } = leaveSheet;
-
-    // Delete the player's BlockPlayer record from the current block so refresh reflects the removal
-    const currentBp = currentBlock?.blockPlayers.find((bp) => bp.playerId === playerId);
-    if (currentBp?.id) {
-      await api(`/api/blockplayers/${currentBp.id}`, { method: 'DELETE' });
-    }
-
-    // Regenerate future blocks excluding the leaving player
-    const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ removePlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
-    });
-    const newPlan = await regenRes.json();
-
-    // Remove player entirely from current block and replace future blocks
-    setPlan((prev) =>
-      prev.map((block, i) => {
-        if (i < currentBlockIdx) return block;
-        if (i === currentBlockIdx) {
-          return {
-            ...block,
-            blockPlayers: block.blockPlayers.filter((bp) => bp.playerId !== playerId),
-          };
-        }
-        const regenerated = newPlan.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
-        if (regenerated) return { ...regenerated, blockPlayers: regenerated.assignments };
-        return block;
-      })
-    );
-
     setLeaveSheet(null);
+
+    try {
+      // Delete the player's BlockPlayer record from the current block so refresh reflects the removal
+      const currentBp = currentBlock?.blockPlayers.find((bp) => bp.playerId === playerId);
+      if (currentBp?.id) {
+        await api(`/api/blockplayers/${currentBp.id}`, { method: 'DELETE' });
+      }
+
+      // Regenerate future blocks excluding the leaving player
+      const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removePlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
+      });
+      const newPlan = await regenRes.json();
+      if (!regenRes.ok) {
+        setError(newPlan.error || 'Failed to update plan after removal');
+        return;
+      }
+
+      // Remove player entirely from current block and replace future blocks
+      setPlan((prev) =>
+        prev.map((block, i) => {
+          if (i < currentBlockIdx) return block;
+          if (i === currentBlockIdx) {
+            return {
+              ...block,
+              blockPlayers: block.blockPlayers.filter((bp) => bp.playerId !== playerId),
+            };
+          }
+          const regenerated = newPlan.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
+          if (regenerated) return { ...regenerated, blockPlayers: regenerated.assignments };
+          return block;
+        })
+      );
+    } catch (err) {
+      setError('Failed to remove player');
+    }
   };
 
   const formatTime = (s) => {
