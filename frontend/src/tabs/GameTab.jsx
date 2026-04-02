@@ -53,6 +53,10 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       setTimerSeconds(BLOCK_DURATION);
       setTimerRunning(false);
       setIsHalftime(false);
+      setBlockStartTime(null);
+      setHalfStartTime(null);
+      setHalfTimerRunning(false);
+      setHalfTimerSeconds(0);
       return;
     }
     setLoading(true);
