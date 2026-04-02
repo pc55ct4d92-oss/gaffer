@@ -373,6 +373,12 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   const doEarlyLeave = async () => {
     const { playerId } = leaveSheet;
 
+    // Delete the player's BlockPlayer record from the current block so refresh reflects the removal
+    const currentBp = currentBlock?.blockPlayers.find((bp) => bp.playerId === playerId);
+    if (currentBp?.id) {
+      await api(`/api/blockplayers/${currentBp.id}`, { method: 'DELETE' });
+    }
+
     // Regenerate future blocks excluding the leaving player
     const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
       method: 'POST',

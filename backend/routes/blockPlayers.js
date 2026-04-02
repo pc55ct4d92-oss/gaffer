@@ -17,4 +17,14 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/blockplayers/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    await prisma.blockPlayer.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
