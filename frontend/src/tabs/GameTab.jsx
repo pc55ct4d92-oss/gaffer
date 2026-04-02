@@ -279,53 +279,65 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
   };
 
   const doLateArrival = async (playerId) => {
-    // Persist the late player as sitting in the current block FIRST so that
-    // generate-plan loads them as a locked-sitting player when it freezes the
-    // current block. Without this, the consecutive-sit rule wouldn't fire and
-    // the player could be assigned sitting again in the very next block.
-    const currentBlockId = plan[currentBlockIdx]?.id;
-    let savedBpId = null;
-    if (currentBlockId) {
-      const bpRes = await api(`/api/games/${selectedGame.id}/add-sitting-player`, {
+    setArrivalSheet(false);
+    try {
+      // Persist the late player as sitting in the current block FIRST so that
+      // generate-plan loads them as a locked-sitting player when it freezes the
+      // current block. Without this, the consecutive-sit rule wouldn't fire and
+      // the player could be assigned sitting again in the very next block.
+      const currentBlockId = plan[currentBlockIdx]?.id;
+      let savedBpId = null;
+      if (currentBlockId) {
+        const bpRes = await api(`/api/games/${selectedGame.id}/add-sitting-player`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blockId: currentBlockId, playerId }),
+        });
+        const savedBp = await bpRes.json();
+        if (!bpRes.ok) {
+          setError(savedBp.error || 'Failed to add arriving player');
+          return;
+        }
+        savedBpId = savedBp.id;
+      }
+
+      // Regenerate future blocks with the new player included
+      const res = await api(`/api/games/${selectedGame.id}/generate-plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blockId: currentBlockId, playerId }),
+        body: JSON.stringify({ newPlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
       });
-      const savedBp = await bpRes.json();
-      savedBpId = savedBp.id;
+      const newPlan = await res.json();
+      if (!res.ok) {
+        setError(newPlan.error || 'Failed to update plan for arriving player');
+        return;
+      }
+
+      setPlan((prev) => {
+        const updated = [...prev];
+        // Replace blocks from currentBlockIdx + 1 forward with regenerated plan
+        for (let i = currentBlockIdx + 1; i < updated.length; i++) {
+          const block = newPlan.find((b) => b.half === updated[i].half && b.blockNumber === updated[i].blockNumber);
+          if (block) updated[i] = { ...block, blockPlayers: block.assignments };
+        }
+        // Add arriving player to current block as sitting with their real DB id
+        const cur = updated[currentBlockIdx];
+        if (!cur.blockPlayers.some((bp) => bp.playerId === playerId)) {
+          updated[currentBlockIdx] = {
+            ...cur,
+            blockPlayers: [...cur.blockPlayers, { id: savedBpId, playerId, isOnField: false, role: null }],
+          };
+        }
+        return updated;
+      });
+
+      setPlayerMinutes((prev) => ({
+        ...prev,
+        [playerId]: prev[playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 },
+      }));
+    } catch (err) {
+      setError('Failed to add arriving player');
     }
-
-    // Regenerate future blocks with the new player included
-    const res = await api(`/api/games/${selectedGame.id}/generate-plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newPlayerId: playerId, fromBlockIndex: currentBlockIdx + 1, locks: [] }),
-    });
-    const newPlan = await res.json();
-
-    setPlan((prev) => {
-      const updated = [...prev];
-      // Replace blocks from currentBlockIdx + 1 forward with regenerated plan
-      for (let i = currentBlockIdx + 1; i < updated.length; i++) {
-        const block = newPlan.find((b) => b.half === updated[i].half && b.blockNumber === updated[i].blockNumber);
-        if (block) updated[i] = { ...block, blockPlayers: block.assignments };
-      }
-      // Add arriving player to current block as sitting with their real DB id
-      const cur = updated[currentBlockIdx];
-      if (!cur.blockPlayers.some((bp) => bp.playerId === playerId)) {
-        updated[currentBlockIdx] = {
-          ...cur,
-          blockPlayers: [...cur.blockPlayers, { id: savedBpId, playerId, isOnField: false, role: null }],
-        };
-      }
-      return updated;
-    });
-
-    setPlayerMinutes((prev) => ({
-      ...prev,
-      [playerId]: prev[playerId] || { totalMinutes: 0, offenseMinutes: 0, defenseMinutes: 0, gkMinutes: 0 },
-    }));
-    setArrivalSheet(false);
   };
 
   const doEmergencySub = async (outPlayerId) => {
@@ -333,42 +345,55 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     const blockId = currentBlock.id;
     const outBp = onField.find((bp) => bp.playerId === outPlayerId);
     const role = outBp?.role ?? null;
-
-    // Persist the sub for the current block
-    await api(`/api/games/${selectedGame.id}/emergency-sub`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blockId, outPlayerId, inPlayerId, role }),
-    });
-
-    // Regenerate future blocks based on the updated current block lineup
-    const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fromBlockIndex: currentBlockIdx + 1, locks: [] }),
-    });
-    const newPlan = await regenRes.json();
-
-    setPlan((prev) =>
-      prev.map((block, i) => {
-        if (i === currentBlockIdx) {
-          // Update current block with the sub
-          return {
-            ...block,
-            blockPlayers: block.blockPlayers.map((bp) => {
-              if (bp.playerId === outPlayerId) return { ...bp, isOnField: false, role: null };
-              if (bp.playerId === inPlayerId) return { ...bp, isOnField: true, role };
-              return bp;
-            }),
-          };
-        }
-        // Replace future blocks with regenerated assignments
-        const regenerated = newPlan.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
-        if (regenerated) return { ...regenerated, blockPlayers: regenerated.assignments };
-        return block;
-      })
-    );
     setSubSheet(null);
+
+    try {
+      // Persist the sub for the current block
+      const subRes = await api(`/api/games/${selectedGame.id}/emergency-sub`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blockId, outPlayerId, inPlayerId, role }),
+      });
+      if (!subRes.ok) {
+        const body = await subRes.json();
+        setError(body.error || 'Failed to apply emergency sub');
+        return;
+      }
+
+      // Regenerate future blocks based on the updated current block lineup
+      const regenRes = await api(`/api/games/${selectedGame.id}/generate-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fromBlockIndex: currentBlockIdx + 1, locks: [] }),
+      });
+      const newPlan = await regenRes.json();
+      if (!regenRes.ok) {
+        setError(newPlan.error || 'Failed to update plan after emergency sub');
+        return;
+      }
+
+      setPlan((prev) =>
+        prev.map((block, i) => {
+          if (i === currentBlockIdx) {
+            // Update current block with the sub
+            return {
+              ...block,
+              blockPlayers: block.blockPlayers.map((bp) => {
+                if (bp.playerId === outPlayerId) return { ...bp, isOnField: false, role: null };
+                if (bp.playerId === inPlayerId) return { ...bp, isOnField: true, role };
+                return bp;
+              }),
+            };
+          }
+          // Replace future blocks with regenerated assignments
+          const regenerated = newPlan.find((b) => b.half === block.half && b.blockNumber === block.blockNumber);
+          if (regenerated) return { ...regenerated, blockPlayers: regenerated.assignments };
+          return block;
+        })
+      );
+    } catch (err) {
+      setError('Failed to apply emergency sub');
+    }
   };
 
   const doEarlyLeave = async () => {
