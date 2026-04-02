@@ -728,7 +728,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
 
           {subSheet && (() => {
             const inPlayer = players.find((p) => p.id === subSheet.playerId);
-            const fieldOptions = onField.filter((bp) => bp.role !== 'goalkeeper');
+            const fieldOptions = onField;
             return (
               <>
                 <div className="sheet-backdrop" onClick={() => setSubSheet(null)} />
