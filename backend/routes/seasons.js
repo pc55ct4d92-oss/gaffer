@@ -144,11 +144,11 @@ router.get('/:id/stats', async (req, res) => {
         defenseMinutes += gp.defenseMinutes;
         gkMinutes += gp.gkMinutes;
 
-        // Debt: expected field minutes this game minus actual field minutes (GK minutes excluded)
+        // Debt: expected minutes this game minus actual minutes played (GK time counts)
         const attendingGPs = game.gamePlayers.filter((gp) => gp.attending);
-        const teamFieldMinutes = attendingGPs.reduce((sum, gp) => sum + gp.totalMinutes - gp.gkMinutes, 0);
-        const expectedFieldMinutes = attendingGPs.length > 0 ? teamFieldMinutes / attendingGPs.length : 0;
-        debt += expectedFieldMinutes - (gp.totalMinutes - gp.gkMinutes);
+        const teamTotalMinutes = attendingGPs.reduce((sum, gp) => sum + gp.totalMinutes, 0);
+        const expectedMinutes = attendingGPs.length > 0 ? teamTotalMinutes / attendingGPs.length : 0;
+        debt += expectedMinutes - gp.totalMinutes;
 
         for (const block of game.blocks) {
           const bp = block.blockPlayers.find((bp) => bp.playerId === player.id);

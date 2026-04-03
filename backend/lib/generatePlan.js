@@ -195,7 +195,7 @@ function buildPrevGameBlock1Sitters(allGames, currentGameId) {
  * Higher value = player has played fewer minutes than expected = should sit sooner now.
  *
  * For each past game the player attended:
- *   expectedMinutes = teamTotalMinutes / attendingCount
+ *   expectedMinutes = teamTotalMinutes / attendingCount  (GK time counts)
  *   debt += expectedMinutes - player.totalMinutes
  *
  * Positive debt = played less than their share = higher sit priority.
@@ -214,9 +214,9 @@ function buildSitPriorityMap(attending, allGames, currentGameId) {
       if (!gamePlayer || !gamePlayer.attending) continue;
 
       const attendingGPs = game.gamePlayers.filter((g) => g.attending);
-      const teamFieldMinutes = attendingGPs.reduce((sum, g) => sum + g.totalMinutes - g.gkMinutes, 0);
-      const expectedFieldMinutes = attendingGPs.length > 0 ? teamFieldMinutes / attendingGPs.length : 0;
-      debt += expectedFieldMinutes - (gamePlayer.totalMinutes - gamePlayer.gkMinutes);
+      const teamTotalMinutes = attendingGPs.reduce((sum, g) => sum + g.totalMinutes, 0);
+      const expectedMinutes = attendingGPs.length > 0 ? teamTotalMinutes / attendingGPs.length : 0;
+      debt += expectedMinutes - gamePlayer.totalMinutes;
     }
 
     map[pid] = debt; // positive = played less than expected = higher sit priority
