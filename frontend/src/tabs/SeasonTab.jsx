@@ -93,8 +93,14 @@ export default function SeasonTab({ activeSeason, activeGame, setActiveGame, sea
         </div>
       ))}
 
+      <div className="debt-key">
+        <span className="debt-key-title">DEBT</span> minutes owed vs fair share. <span className="debt-pos">+positive</span> = played less, prioritised next game. <span className="debt-neg">negative</span> = played more, sits sooner.
+      </div>
+
       <style>{`
         .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
+        .debt-key { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; margin-bottom: 1.25rem; line-height: 1.5; }
+        .debt-key-title { font-weight: 700; color: var(--text); }
         .subsection { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
         .stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .stats-table th, .stats-table td { padding: 0.4rem 0.5rem; text-align: right; border-bottom: 1px solid var(--border); }
