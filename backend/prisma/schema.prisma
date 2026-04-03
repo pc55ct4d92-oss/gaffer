@@ -37,9 +37,10 @@ model Game {
   gameNumber Int
   date       DateTime?
   notes      String?
-  ourScore   Int      @default(0)
-  theirScore Int      @default(0)
-  createdAt  DateTime @default(now())
+  ourScore     Int       @default(0)
+  theirScore   Int       @default(0)
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
 
   season      Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   gamePlayers GamePlayer[]

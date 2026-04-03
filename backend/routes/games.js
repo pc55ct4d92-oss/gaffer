@@ -17,10 +17,15 @@ router.get('/:id', async (req, res) => {
 // PATCH /api/games/:id
 router.patch('/:id', async (req, res) => {
   try {
-    const { gameNumber, date, notes } = req.body;
+    const { gameNumber, date, notes, completedAt } = req.body;
     const game = await prisma.game.update({
       where: { id: parseInt(req.params.id) },
-      data: { gameNumber, date: date ? new Date(date) : undefined, notes },
+      data: {
+        gameNumber,
+        date: date ? new Date(date) : undefined,
+        notes,
+        completedAt: completedAt ? new Date(completedAt) : undefined,
+      },
     });
     res.json(game);
   } catch (err) {

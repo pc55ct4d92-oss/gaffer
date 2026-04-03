@@ -332,8 +332,8 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
             <button className="secondary" onClick={generatePlan} disabled={generating} style={{ flex: 1 }}>
               {generating ? 'Generating…' : 'Regenerate'}
             </button>
-            <button className="primary" style={{ flex: 1 }} onClick={() => { setActiveGame(selectedGame); setPlanVersion((v) => v + 1); setActiveTab('game'); }}>
-              Start Game →
+            <button className="primary" style={{ flex: 1 }} onClick={() => { setActiveGame(selectedGame); setPlanVersion((v) => v + 1); setActiveTab('game'); }} disabled={!!selectedGame?.completedAt}>
+              {selectedGame?.completedAt ? 'Game Completed' : 'Start Game →'}
             </button>
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>

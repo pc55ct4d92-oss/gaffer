@@ -217,6 +217,11 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
       setHalfTimerRunning(false);
       setIsGameOver(true);
       clearSession();
+      await api(`/api/games/${selectedGame.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completedAt: new Date().toISOString() }),
+      });
       return;
     }
 
