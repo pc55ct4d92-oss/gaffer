@@ -183,8 +183,8 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
     if (currentBlockIdx > 5) return;
 
     const elapsed = blockStartTime
-      ? Math.min(Math.max(Math.round((Date.now() - blockStartTime) / 60000 * 10) / 10, 0), 8)
-      : 8;
+      ? Math.max(Math.round((Date.now() - blockStartTime) / 60000 * 10) / 10, 0)
+      : BLOCK_DURATION / 60;
 
     const updated = { ...playerMinutes };
     if (currentBlock) {
