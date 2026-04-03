@@ -788,7 +788,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                 <div className="sheet-backdrop" onClick={() => setSubSheet(null)} />
                 <div className="sheet" onClick={(e) => e.stopPropagation()}>
                   <div className="sheet-title">Emergency Sub</div>
-                  <div className="sheet-sub">Bringing on {inPlayer?.name?.split(' ')[0]}. Who is coming off?</div>
+                  <div className="sheet-sub">Bringing on {inPlayer ? playerName(inPlayer.id) : ''}. Who is coming off?</div>
                   <div className="sheet-list">
                     {fieldOptions.map((bp) => (
                       <button key={bp.playerId} className="sheet-row" onClick={() => doEmergencySub(bp.playerId)}>
