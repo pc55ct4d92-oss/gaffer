@@ -577,21 +577,32 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
                   <button
                     className={timerRunning ? 'secondary' : 'primary'}
                     onClick={() => {
-                      if (!timerRunning && blockStartTime === null) {
+                      if (!timerRunning) {
                         const now = Date.now();
-                        setBlockStartTime(now);
-                        setHalfStartTime(now);
+                        // Rebase timestamps to now minus elapsed so far, so a refresh
+                        // after pause+resume computes the correct remaining time.
+                        const newBlockStart = blockStartTime === null
+                          ? now
+                          : now - (BLOCK_DURATION - timerSeconds) * 1000;
+                        const newHalfStart = halfStartTime === null
+                          ? now
+                          : now - halfTimerSeconds * 1000;
+                        setBlockStartTime(newBlockStart);
+                        setHalfStartTime(newHalfStart);
                         setHalfTimerRunning(true);
                         saveSession({
                           activeGameId: selectedGame.id,
                           currentBlockIndex: currentBlockIdx,
                           currentHalf: currentBlock?.half ?? 1,
-                          blockStartTime: now,
-                          halfStartTime: now,
+                          blockStartTime: newBlockStart,
+                          halfStartTime: newHalfStart,
                           isHalftime: false,
                         });
                       }
-                      setTimerRunning((r) => !r);
+                      setTimerRunning((r) => {
+                        if (r) setHalfTimerRunning(false);
+                        return !r;
+                      });
                     }}
                   >
                     {timerRunning ? 'Pause' : timerSeconds === BLOCK_DURATION ? 'Start' : 'Resume'}
