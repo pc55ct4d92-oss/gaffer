@@ -332,14 +332,9 @@ export default function SetupTab({ activeSeason, activeGame, setActiveGame, setA
             <button className="secondary" onClick={generatePlan} disabled={generating} style={{ flex: 1 }}>
               {generating ? 'Generating…' : 'Regenerate'}
             </button>
-            {(() => {
-              const isCompleted = !!selectedGame?.completedAt || (setup?.gamePlayers || []).some((gp) => gp.totalMinutes > 0);
-              return (
-                <button className="primary" style={{ flex: 1 }} onClick={() => { setActiveGame(selectedGame); setPlanVersion((v) => v + 1); setActiveTab('game'); }} disabled={isCompleted}>
-                  {isCompleted ? 'Game Completed' : 'Start Game →'}
-                </button>
-              );
-            })()}
+            <button className="primary" style={{ flex: 1 }} onClick={() => { setActiveGame(selectedGame); setPlanVersion((v) => v + 1); setActiveTab('game'); }} disabled={!!selectedGame?.completedAt}>
+              {selectedGame?.completedAt ? 'Game Completed' : 'Start Game →'}
+            </button>
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
             Tap a red sitting player to swap manually. Locks kept on regenerate.
