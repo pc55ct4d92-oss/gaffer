@@ -126,16 +126,19 @@ export default function SeasonTab({ activeSeason, activeGame, setActiveGame, sea
 function GameDetail({ game }) {
   const [setup, setSetup] = useState(null);
   const [plan, setPlan] = useState(null);
+  const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       api(`/api/games/${game.id}/setup`).then((r) => r.json()),
       api(`/api/games/${game.id}/plan`).then((r) => r.json()),
+      api(`/api/games/${game.id}/goals`).then((r) => r.json()),
     ])
-      .then(([setupData, planData]) => {
+      .then(([setupData, planData, goalsData]) => {
         setSetup(setupData);
         setPlan(planData);
+        setGoals(goalsData);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -174,6 +177,14 @@ function GameDetail({ game }) {
       <div className="game-meta">
         {attending.length} players{gkLine ? ` · GK: ${gkLine}` : ''}
       </div>
+      {goals.filter((g) => !g.isOpponent).length > 0 && (
+        <div className="game-scorers">
+          Goals: {goals.filter((g) => !g.isOpponent).map((g) => {
+            if (!g.player) return 'Unknown';
+            return displayName(g.player.name);
+          }).join(', ')}
+        </div>
+      )}
 
       {/* Playing time table */}
       <table className="stats-table" style={{ marginBottom: '1rem' }}>
@@ -232,7 +243,8 @@ function GameDetail({ game }) {
       )}
 
       <style>{`
-        .game-meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+        .game-meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .game-scorers { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
         .rotation-grid { font-size: 0.75rem; }
         .grid-row { display: flex; align-items: center; gap: 2px; margin-bottom: 2px; }
         .grid-name-col { width: 52px; font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; }
