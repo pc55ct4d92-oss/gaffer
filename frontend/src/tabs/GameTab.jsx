@@ -4,7 +4,7 @@ import { saveSession, clearSession, loadSession } from '../gameSession';
 
 const BLOCK_DURATION = 8 * 60; // 8 minutes in seconds
 
-export default function GameTab({ activeSeason, activeGame, setActiveGame, setActiveTab, planVersion }) {
+export default function GameTab({ activeSeason, activeGame, setActiveGame, setActiveTab, planVersion, setSeasonVersion }) {
   const [games, setGames] = useState([]);
   const [players, setPlayers] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
@@ -496,6 +496,7 @@ export default function GameTab({ activeSeason, activeGame, setActiveGame, setAc
             clearSession();
             setActiveGame(null);
             setIsGameOver(false);
+            setSeasonVersion((v) => v + 1);
             setActiveTab('season');
           }}>
             Done

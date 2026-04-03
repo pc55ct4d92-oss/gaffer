@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 
-export default function SeasonTab({ activeSeason, activeGame, setActiveGame }) {
+export default function SeasonTab({ activeSeason, activeGame, setActiveGame, seasonVersion }) {
   const [games, setGames] = useState([]);
   const [stats, setStats] = useState(null);
   const [expanded, setExpanded] = useState(null);
@@ -25,7 +25,7 @@ export default function SeasonTab({ activeSeason, activeGame, setActiveGame }) {
         setError(e.message);
         setLoading(false);
       });
-  }, [activeSeason]);
+  }, [activeSeason, seasonVersion]);
 
   if (!activeSeason) return <div className="loading">No active season</div>;
   if (loading) return <div className="loading">Loading season…</div>;
