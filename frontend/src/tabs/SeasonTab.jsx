@@ -149,6 +149,20 @@ function GameDetail({ game }) {
     h2Goalie ? `${h2Goalie.player.name} (H2)` : null,
   ].filter(Boolean).join(' ');
 
+  // Build a display label: show last initial when two players share a first name
+  const firstNameCounts = {};
+  attending.forEach((gp) => {
+    const first = gp.player.name.split(' ')[0];
+    firstNameCounts[first] = (firstNameCounts[first] || 0) + 1;
+  });
+  const displayName = (fullName) => {
+    const parts = fullName.split(' ');
+    if (parts.length > 1 && firstNameCounts[parts[0]] > 1) {
+      return `${parts[0]} ${parts[parts.length - 1][0]}`;
+    }
+    return parts[0];
+  };
+
   return (
     <div style={{ padding: '0 0.875rem 0.875rem' }}>
       <div className="game-meta">
@@ -194,7 +208,7 @@ function GameDetail({ game }) {
           </div>
           {attending.map((gp) => (
             <div key={gp.playerId} className="grid-row">
-              <div className="grid-name-col">{gp.player.name.split(' ')[0]}</div>
+              <div className="grid-name-col">{displayName(gp.player.name)}</div>
               {[1, 2].map((half) =>
                 [1, 2, 3].map((bn) => {
                   const block = plan.find((b) => b.half === half && b.blockNumber === bn);
